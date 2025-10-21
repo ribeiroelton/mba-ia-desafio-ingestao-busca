@@ -1,0 +1,2 @@
+# Dependências serão adicionadas na Tarefa 003
+# Ver stack.md para lista completa
