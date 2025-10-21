@@ -1,2 +1,1 @@
-# mba-ia-desafio-ingestao-busca
-Serviço de Ingestão e Busca Semântica em RAG
+# Desafio MBA Engenharia de Software com IA - Full Cycle
