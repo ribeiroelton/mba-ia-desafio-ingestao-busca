@@ -5,6 +5,7 @@ Provê setup/teardown compartilhado entre testes.
 """
 import os
 import pytest
+import uuid
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -12,6 +13,23 @@ from langchain_postgres import PGVector
 from langchain_openai import OpenAIEmbeddings
 
 load_dotenv()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def setup_llm_model():
+    """
+    Garante que gpt-5-nano é usado em todos os testes.
+    
+    Configura automaticamente o modelo LLM para testes otimizados.
+    """
+    os.environ["LLM_MODEL"] = "gpt-5-nano"
+    yield
+
+
+@pytest.fixture
+def gpt5_nano_model():
+    """Retorna nome do modelo para testes."""
+    return "gpt-5-nano"
 
 
 @pytest.fixture(scope="session")
@@ -31,8 +49,24 @@ def embeddings_model():
 
 @pytest.fixture
 def test_collection_name():
-    """Nome da coleção de teste."""
-    return "pytest_test_collection"
+    """
+    Nome único da coleção de teste.
+    
+    Usa UUID para evitar conflitos entre testes paralelos.
+    """
+    return f"test_{uuid.uuid4().hex[:8]}"
+
+
+@pytest.fixture(scope="module")
+def shared_test_collection():
+    """
+    Cria coleção de teste uma vez por módulo.
+    
+    Reduz tempo de setup repetido para testes do mesmo módulo.
+    """
+    collection_name = f"test_module_{uuid.uuid4().hex[:8]}"
+    yield collection_name
+    # Cleanup será feito pelo clean_test_collection
 
 
 @pytest.fixture
@@ -65,7 +99,7 @@ def clean_test_collection(connection_string, embeddings_model, test_collection_n
         pass
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def sample_pdf_path():
     """Caminho para PDF de teste."""
     # Tentar fixtures primeiro, depois document.pdf na raiz

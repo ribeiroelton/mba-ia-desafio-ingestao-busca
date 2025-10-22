@@ -1,10 +1,10 @@
 # Tarefas do Projeto - Sistema de Ingestão e Busca Semântica
 
 ## Resumo Executivo
-- **Total de tarefas**: 10
+- **Total de tarefas**: 11
 - **Grupos**: 3 fases
-- **Estimativa total**: 2 sprints (10 dias úteis)
-- **Duração por tarefa**: 1 dia
+- **Estimativa total**: 2.5 sprints (12 dias úteis)
+- **Duração média por tarefa**: 1 dia
 
 ## Agrupamento e Ordenação
 
@@ -38,15 +38,18 @@
 
 ---
 
-### Fase 3: Qualidade e Documentação (2 dias)
-**Objetivo**: Garantir qualidade, testes e documentação completa  
-**Entregas**: Testes validados, documentação completa, sistema pronto para uso
+### Fase 3: Qualidade e Documentação (4 dias)
+**Objetivo**: Garantir qualidade, otimizar testes e documentação completa  
+**Entregas**: Testes validados e otimizados, documentação completa, sistema pronto para uso
 
 #### Sprint 2 - Grupo 4: Finalização (Dias 9-10)
 - **Tarefa 009**: Validar cenários de teste e ajustar cobertura
 - **Tarefa 010**: Documentar README e instruções de uso
 
-**Critério de aceite da fase**: Todos os testes passando, documentação completa, sistema pronto para entrega
+#### Sprint 3 - Grupo 5: Otimização (Dias 11-12)
+- **Tarefa 011**: Otimizar suite de testes (reduzir custo/tempo, foco em integração)
+
+**Critério de aceite da fase**: Todos os testes passando, documentação completa, testes otimizados com gpt-5-nano, sistema pronto para entrega
 
 ---
 
@@ -112,6 +115,7 @@ Tarefa 007: Integração nos 3 scripts
 Tarefa 008: tests/ (novos arquivos)
 Tarefa 009: Validações e ajustes
 Tarefa 010: README.md
+Tarefa 011: tests/ (otimização, reorganização)
 ```
 
 ---
@@ -133,13 +137,19 @@ Tarefa 010: README.md
 ### Fase 3: Finalização ⬜
 - [ ] Tarefa 009 - Validação
 - [ ] Tarefa 010 - Documentação
+- [ ] Tarefa 011 - Otimização de Testes
 
 ---
 
 ## Notas de Execução
 
 ### Ordem Recomendada
-Executar estritamente na ordem 001 → 010, respeitando dependências críticas.
+Executar estritamente na ordem 001 → 011, respeitando dependências críticas.
+
+**Tarefa 011 (Otimização)** deve ser executada após 009 e 010 estarem concluídas, pois:
+- Requer suite de testes completa existente
+- Depende de documentação atualizada
+- Pode impactar métricas já estabelecidas
 
 ### Paralelização (Opcional)
 Se houver mais de um desenvolvedor:
