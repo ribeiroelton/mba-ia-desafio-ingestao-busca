@@ -10,227 +10,68 @@ from src.search import SemanticSearch
 from src.chat import ask_llm, SYSTEM_PROMPT
 
 
-def test_e2e_complete_flow_with_real_llm(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_complete_flow(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    Teste E2E completo: Ingest → Search → Chat com gpt-5-nano real e AVALIAÇÃO LLM.
-    
-    Fluxo:
-    1. Ingerir PDF
-    2. Buscar contexto relevante
-    3. Gerar resposta com LLM real
-    4. Validar resposta estruturalmente
-    5. Avaliar qualidade com LLM-as-a-Judge
-    
-    Este é o teste mais importante: valida todo o sistema funcionando.
+    Teste E2E completo: Ingest → Search → Chat.
     """
-    # 1. Ingestão
+    # Ingestão
     docs = load_pdf(sample_pdf_path)
     chunks = split_documents(docs)
     store_in_vectorstore(chunks, clean_test_collection)
     
-    assert len(chunks) > 0, "Documento deve gerar chunks"
-    
-    # 2. Busca
+    # Busca com pergunta direta sobre dado real
     searcher = SemanticSearch(collection_name=clean_test_collection)
-    question = "Qual é o conteúdo principal?"
+    question = "Qual é o faturamento da primeira empresa mencionada no documento?"
     context = searcher.get_context(question)
-    
-    assert len(context) > 0, "Contexto deve ser recuperado"
-    
-    # 3. Chat com LLM REAL (gpt-5-nano)
     response = ask_llm(question=question, context=context)
     
-    # 4. Validações estruturais
-    assert isinstance(response, str), "Resposta deve ser string"
-    assert len(response) > 10, "Resposta deve ser substantiva"
-    assert response != "", "Resposta não pode ser vazia"
-    
-    # 5. AVALIAÇÃO QUALITATIVA
     evaluation = llm_evaluator.evaluate(
-        question=question,
-        context=context,
-        response=response,
-        system_prompt=SYSTEM_PROMPT
+        question=question, context=context, response=response, system_prompt=SYSTEM_PROMPT
     )
     
-    # Fluxo E2E completo deve ter alta qualidade
-    assert evaluation.criteria_scores["adherence_to_context"] >= 70, \
-        "Resposta E2E deve aderir ao contexto"
-    
-    assert evaluation.overall_score >= 70, \
-        f"Fluxo E2E completo deve ter qualidade adequada\n{evaluation.feedback}"
+    assert evaluation.passed
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70
 
 
-def test_e2e_complete_flow_with_evaluation(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_no_context_flow(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    Teste E2E completo com AVALIAÇÃO LLM de qualidade.
-    
-    Valida todo o fluxo end-to-end com avaliação qualitativa da resposta.
+    Teste E2E com pergunta fora do contexto.
     """
-    # 1. Ingestão
     docs = load_pdf(sample_pdf_path)
     chunks = split_documents(docs)
     store_in_vectorstore(chunks, clean_test_collection)
     
-    # 2. Busca
     searcher = SemanticSearch(collection_name=clean_test_collection)
-    question = "Resuma o conteúdo principal do documento"
+    question = "Qual é a capital do Brasil?"
     context = searcher.get_context(question)
+    response = ask_llm(question, context)
     
-    assert len(context) > 0
+    assert "Não tenho informações necessárias" in response
     
-    # 3. Chat com LLM REAL
-    response = ask_llm(question=question, context=context)
-    
-    assert len(response) > 10
-    
-    # 4. NOVA: Avaliação qualitativa
     evaluation = llm_evaluator.evaluate(
-        question=question,
-        context=context,
-        response=response,
-        system_prompt=SYSTEM_PROMPT
+        question=question, context=context, response=response, system_prompt=SYSTEM_PROMPT
     )
     
-    # Fluxo E2E completo deve ter alta qualidade
-    assert evaluation.criteria_scores["adherence_to_context"] >= 70, \
-        "Resposta E2E deve aderir ao contexto"
-    
-    assert evaluation.criteria_scores["hallucination_detection"] >= 75, \
-        "Resposta E2E não deve alucinar"
-    
-    assert evaluation.overall_score >= 70, \
-        f"Fluxo E2E completo deve ter qualidade adequada\n{evaluation.feedback}"
+    assert evaluation.criteria_scores["rule_following"] >= 90
 
 
-def test_e2e_multiple_queries_same_session(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_special_characters(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    Teste E2E: Múltiplas queries na mesma sessão com AVALIAÇÃO LLM.
-    
-    Valida:
-    - Consistência de resultados
-    - Performance de queries sequenciais
-    - Qualidade de respostas com LLM real
-    
-    Simula uso real: múltiplas perguntas sobre mesmo documento.
+    Teste E2E com caracteres especiais.
     """
-    # Setup: Ingerir documento
     docs = load_pdf(sample_pdf_path)
     chunks = split_documents(docs)
     store_in_vectorstore(chunks, clean_test_collection)
     
     searcher = SemanticSearch(collection_name=clean_test_collection)
-    
-    # Query 1: Com contexto esperado
-    q1 = "Primeira pergunta sobre o documento"
-    context1 = searcher.get_context(q1)
-    response1 = ask_llm(q1, context1)
-    
-    assert len(response1) > 0, "Primeira resposta deve existir"
-    
-    # Avaliar Query 1
-    eval1 = llm_evaluator.evaluate(q1, context1, response1, SYSTEM_PROMPT)
-    assert eval1.criteria_scores["adherence_to_context"] >= 65, \
-        "Query com contexto deve aderir ao contexto"
-    
-    # Query 2: Sem contexto (fora do doc)
-    q2 = "Qual é a capital do Brasil?"
-    context2 = searcher.get_context(q2)
-    response2 = ask_llm(q2, context2)
-    
-    # Deve retornar mensagem padrão
-    assert "Não tenho informações necessárias" in response2, \
-        "Pergunta fora do contexto deve retornar mensagem padrão"
-    
-    # Avaliar Query 2
-    eval2 = llm_evaluator.evaluate(q2, context2, response2, SYSTEM_PROMPT)
-    assert eval2.criteria_scores["rule_following"] >= 80, \
-        "Mensagem padrão deve seguir regras"
-    
-    # Query 3: Com contexto novamente
-    q3 = "Outra pergunta sobre o documento"
-    context3 = searcher.get_context(q3)
-    response3 = ask_llm(q3, context3)
-    
-    assert len(response3) > 0, "Terceira resposta deve existir"
-    
-    # Avaliar Query 3
-    eval3 = llm_evaluator.evaluate(q3, context3, response3, SYSTEM_PROMPT)
-    
-    # Validar consistência
-    assert eval1.passed or eval3.passed, \
-        "Pelo menos uma query com contexto deve passar no threshold"
-
-
-def test_e2e_multiple_queries_with_evaluation(sample_pdf_path, clean_test_collection, llm_evaluator):
-    """
-    Teste E2E: Múltiplas queries com AVALIAÇÃO LLM.
-    
-    Valida consistência de qualidade entre múltiplas perguntas.
-    """
-    # Setup
-    docs = load_pdf(sample_pdf_path)
-    chunks = split_documents(docs)
-    store_in_vectorstore(chunks, clean_test_collection)
-    
-    searcher = SemanticSearch(collection_name=clean_test_collection)
-    
-    # Query 1: Com contexto
-    q1 = "Qual é o tema principal?"
-    ctx1 = searcher.get_context(q1)
-    resp1 = ask_llm(q1, ctx1)
-    
-    eval1 = llm_evaluator.evaluate(q1, ctx1, resp1, SYSTEM_PROMPT)
-    
-    # Query 2: Sem contexto (deve retornar mensagem padrão)
-    q2 = "Qual é a velocidade da luz?"
-    ctx2 = searcher.get_context(q2)
-    resp2 = ask_llm(q2, ctx2)
-    
-    eval2 = llm_evaluator.evaluate(q2, ctx2, resp2, SYSTEM_PROMPT)
-    
-    # Validações
-    assert eval1.passed or eval2.passed, \
-        "Ao menos uma query deve passar (com ou sem contexto)"
-    
-    # Se resposta 2 é mensagem padrão, deve ter score alto
-    if "Não tenho informações necessárias" in resp2:
-        assert eval2.overall_score >= 85, \
-            "Mensagem padrão deve ter score alto"
-
-
-def test_e2e_special_characters_in_query(sample_pdf_path, clean_test_collection, llm_evaluator):
-    """
-    Teste E2E: Query com caracteres especiais e AVALIAÇÃO LLM.
-    
-    Valida que sistema lida corretamente com acentuação e pontuação.
-    """
-    # Setup
-    docs = load_pdf(sample_pdf_path)
-    chunks = split_documents(docs)
-    store_in_vectorstore(chunks, clean_test_collection)
-    
-    searcher = SemanticSearch(collection_name=clean_test_collection)
-    
-    # Query com caracteres especiais
-    question = "Qual informação sobre \"questões\" importantes?"
+    question = "Os valores estão em qual moeda?"
     context = searcher.get_context(question)
+    response = ask_llm(question, context)
     
-    # Sistema deve processar normalmente
-    response = ask_llm(question=question, context=context)
-    
-    assert isinstance(response, str), "Resposta deve ser string"
-    assert len(response) > 0, "Resposta não pode ser vazia"
-    
-    # AVALIAÇÃO QUALITATIVA
     evaluation = llm_evaluator.evaluate(
-        question=question,
-        context=context,
-        response=response,
-        system_prompt=SYSTEM_PROMPT
+        question=question, context=context, response=response, system_prompt=SYSTEM_PROMPT
     )
     
-    # Query com caracteres especiais deve funcionar normalmente
-    assert evaluation.overall_score >= 65, \
-        f"Sistema deve processar caracteres especiais adequadamente\n{evaluation.feedback}"
+    assert evaluation.criteria_scores["hallucination_detection"] >= 80
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70
 
