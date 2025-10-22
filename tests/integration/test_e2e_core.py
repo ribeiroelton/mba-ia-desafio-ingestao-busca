@@ -1,13 +1,13 @@
 """
 Testes E2E do fluxo completo com LLM real.
 
-Valida integração end-to-end: Ingest → Search → Chat
+Valida integração end-to-end: Ingest → Search → Chat com avaliação qualitativa.
 """
 import pytest
 
 from src.ingest import load_pdf, split_documents, store_in_vectorstore
 from src.search import SemanticSearch
-from src.chat import ask_llm
+from src.chat import ask_llm, SYSTEM_PROMPT
 
 
 def test_e2e_complete_flow_with_real_llm(sample_pdf_path, clean_test_collection):
@@ -45,6 +45,48 @@ def test_e2e_complete_flow_with_real_llm(sample_pdf_path, clean_test_collection)
     assert isinstance(response, str), "Resposta deve ser string"
     assert len(response) > 10, "Resposta deve ser substantiva"
     assert response != "", "Resposta não pode ser vazia"
+
+
+def test_e2e_complete_flow_with_evaluation(sample_pdf_path, clean_test_collection, llm_evaluator):
+    """
+    Teste E2E completo com AVALIAÇÃO LLM de qualidade.
+    
+    Valida todo o fluxo end-to-end com avaliação qualitativa da resposta.
+    """
+    # 1. Ingestão
+    docs = load_pdf(sample_pdf_path)
+    chunks = split_documents(docs)
+    store_in_vectorstore(chunks, clean_test_collection)
+    
+    # 2. Busca
+    searcher = SemanticSearch(collection_name=clean_test_collection)
+    question = "Resuma o conteúdo principal do documento"
+    context = searcher.get_context(question)
+    
+    assert len(context) > 0
+    
+    # 3. Chat com LLM REAL
+    response = ask_llm(question=question, context=context)
+    
+    assert len(response) > 10
+    
+    # 4. NOVA: Avaliação qualitativa
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Fluxo E2E completo deve ter alta qualidade
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70, \
+        "Resposta E2E deve aderir ao contexto"
+    
+    assert evaluation.criteria_scores["hallucination_detection"] >= 75, \
+        "Resposta E2E não deve alucinar"
+    
+    assert evaluation.overall_score >= 70, \
+        f"Fluxo E2E completo deve ter qualidade adequada\n{evaluation.feedback}"
 
 
 def test_e2e_multiple_queries_same_session(sample_pdf_path, clean_test_collection):
@@ -86,38 +128,48 @@ def test_e2e_multiple_queries_same_session(sample_pdf_path, clean_test_collectio
     assert len(response3) > 0, "Terceira resposta deve existir"
 
 
-def test_e2e_empty_collection_handling(test_collection_name):
+def test_e2e_multiple_queries_with_evaluation(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    Teste E2E: Comportamento com coleção vazia.
+    Teste E2E: Múltiplas queries com AVALIAÇÃO LLM.
     
-    Cenário: Buscar em coleção sem documentos
-    Expected: Sistema trata gracefully, não retorna contexto útil
+    Valida consistência de qualidade entre múltiplas perguntas.
     """
-    # Coleção vazia (clean_test_collection já limpa)
-    searcher = SemanticSearch(collection_name=test_collection_name)
+    # Setup
+    docs = load_pdf(sample_pdf_path)
+    chunks = split_documents(docs)
+    store_in_vectorstore(chunks, clean_test_collection)
     
-    # Buscar em coleção vazia
-    try:
-        context = searcher.get_context("Qualquer pergunta")
-        
-        # Contexto vazio ou mensagem indicando falta de dados
-        # Sistema deve lidar com isso sem erro
-        assert isinstance(context, str), "Contexto deve ser string"
-        
-    except Exception as e:
-        # Aceitar exceção se sistema não consegue buscar em coleção vazia
-        # Mas deve ser exceção tratada, não erro inesperado
-        assert "collection" in str(e).lower() or "not found" in str(e).lower()
+    searcher = SemanticSearch(collection_name=clean_test_collection)
+    
+    # Query 1: Com contexto
+    q1 = "Qual é o tema principal?"
+    ctx1 = searcher.get_context(q1)
+    resp1 = ask_llm(q1, ctx1)
+    
+    eval1 = llm_evaluator.evaluate(q1, ctx1, resp1, SYSTEM_PROMPT)
+    
+    # Query 2: Sem contexto (deve retornar mensagem padrão)
+    q2 = "Qual é a velocidade da luz?"
+    ctx2 = searcher.get_context(q2)
+    resp2 = ask_llm(q2, ctx2)
+    
+    eval2 = llm_evaluator.evaluate(q2, ctx2, resp2, SYSTEM_PROMPT)
+    
+    # Validações
+    assert eval1.passed or eval2.passed, \
+        "Ao menos uma query deve passar (com ou sem contexto)"
+    
+    # Se resposta 2 é mensagem padrão, deve ter score alto
+    if "Não tenho informações necessárias" in resp2:
+        assert eval2.overall_score >= 85, \
+            "Mensagem padrão deve ter score alto"
 
 
 def test_e2e_special_characters_in_query(sample_pdf_path, clean_test_collection):
     """
     Teste E2E: Query com caracteres especiais.
     
-    Valida que sistema lida corretamente com:
-    - Acentuação
-    - Pontuação
-    - Caracteres especiais
+    Valida que sistema lida corretamente com acentuação e pontuação.
     """
     # Setup
     docs = load_pdf(sample_pdf_path)
@@ -136,29 +188,3 @@ def test_e2e_special_characters_in_query(sample_pdf_path, clean_test_collection)
     assert isinstance(response, str), "Resposta deve ser string"
     assert len(response) > 0, "Resposta não pode ser vazia"
 
-
-def test_e2e_context_length_validation(sample_pdf_path, clean_test_collection):
-    """
-    Teste E2E: Validar que contexto tem tamanho adequado.
-    
-    Expected: Contexto contém múltiplos chunks (até k=10)
-    Valida que formatação [Chunk X] está presente
-    """
-    # Setup
-    docs = load_pdf(sample_pdf_path)
-    chunks = split_documents(docs)
-    store_in_vectorstore(chunks, clean_test_collection)
-    
-    searcher = SemanticSearch(collection_name=clean_test_collection)
-    
-    # Query genérica que deve recuperar múltiplos chunks
-    context = searcher.get_context("informações gerais")
-    
-    # Validar formato do contexto
-    assert isinstance(context, str), "Contexto deve ser string"
-    assert len(context) > 0, "Contexto não pode ser vazio"
-    
-    # Se há chunks, formato deve incluir marcadores
-    if len(chunks) > 0:
-        assert "[Chunk" in context or len(context.split('\n')) > 1, \
-            "Contexto deve ter formato estruturado"

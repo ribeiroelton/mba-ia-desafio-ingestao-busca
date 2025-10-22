@@ -1,13 +1,13 @@
 """
 Testes de integração para regras de negócio com LLM real.
 
-Valida comportamento end-to-end com gpt-5-nano.
+Valida comportamento end-to-end com gpt-5-nano e avaliação qualitativa.
 """
 import pytest
 
 from src.ingest import load_pdf, split_documents, store_in_vectorstore
 from src.search import SemanticSearch
-from src.chat import ask_llm
+from src.chat import ask_llm, SYSTEM_PROMPT
 
 
 @pytest.fixture(scope="module")
@@ -98,6 +98,40 @@ def test_rn002_no_context_standard_message(ingested_test_doc):
         "LLM deve retornar mensagem padrão para perguntas fora do contexto"
 
 
+def test_rn002_no_context_with_evaluation(ingested_test_doc, llm_evaluator):
+    """
+    RN-002: Mensagem padrão com AVALIAÇÃO LLM.
+    
+    Valida qualidade da resposta quando não há contexto disponível.
+    """
+    searcher = SemanticSearch(collection_name=ingested_test_doc)
+    
+    question = "Qual é a receita de bolo de chocolate?"
+    context = searcher.get_context(question)
+    response = ask_llm(question=question, context=context)
+    
+    # Validação estrutural
+    assert "Não tenho informações necessárias" in response
+    
+    # Avaliação qualitativa
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Mensagem padrão deve ter score alto
+    assert evaluation.criteria_scores["rule_following"] >= 90, \
+        "Deve seguir regra RN-002 perfeitamente"
+    
+    assert evaluation.criteria_scores["hallucination_detection"] >= 95, \
+        "Não deve alucinar (RN-003)"
+    
+    assert evaluation.overall_score >= 85, \
+        f"Mensagem padrão correta deve ter score alto\n{evaluation.feedback}"
+
+
 def test_rn003_no_external_knowledge(ingested_test_doc):
     """
     RN-003: Sistema nunca deve usar conhecimento externo.
@@ -118,6 +152,40 @@ def test_rn003_no_external_knowledge(ingested_test_doc):
     # LLM NÃO deve responder com conhecimento externo
     assert "Não tenho informações necessárias" in response, \
         "LLM não deve usar conhecimento externo (RN-003)"
+
+
+def test_rn003_no_external_knowledge_with_evaluation(ingested_test_doc, llm_evaluator):
+    """
+    RN-003: Sistema nunca deve usar conhecimento externo com AVALIAÇÃO LLM.
+    
+    Valida que LLM não usa conhecimento pré-treinado mesmo com tentação.
+    """
+    searcher = SemanticSearch(collection_name=ingested_test_doc)
+    
+    # Pergunta sobre tema comum (tentação de usar conhecimento geral)
+    question = "O que é Python?"
+    context = searcher.get_context(question)
+    response = ask_llm(question=question, context=context)
+    
+    # Avaliação qualitativa
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Deve evitar conhecimento externo
+    assert evaluation.criteria_scores["adherence_to_context"] >= 80, \
+        "Não deve usar conhecimento externo (RN-003)"
+    
+    assert evaluation.criteria_scores["rule_following"] >= 85, \
+        "Deve seguir regra de não usar conhecimento externo"
+    
+    # Se não há info sobre Python no doc, deve usar mensagem padrão
+    if "Não tenho informações necessárias" in response:
+        assert evaluation.overall_score >= 85, \
+            "Mensagem padrão correta deve ter score alto"
 
 
 def test_rn006_search_returns_k10(ingested_test_doc):
