@@ -308,18 +308,6 @@ open htmlcov/index.html
 
 ✅ **Custo controlado e aceitável para qualidade garantida**
 
-## Validação Contínua
-
-### CI/CD (GitHub Actions)
-```yaml
-- name: Run Tests
-  run: |
-    pytest tests/ -v --cov=src --cov-report=xml
-    
-- name: Upload Coverage
-  uses: codecov/codecov-action@v3
-```
-
 ### Métricas de Sucesso
 
 | Métrica | Antes | Atual | Melhoria |

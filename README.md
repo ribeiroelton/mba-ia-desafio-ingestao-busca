@@ -1,258 +1,513 @@
-# Sistema RAG - Ingestão e Busca Semântica
+# Sistema RAG - Ingestão e Busca Semântica# Sistema RAG - Ingestão e Busca Semântica
 
-![Python](https://img.shields.io/badge/python-3.13.9-blue)
-![LangChain](https://img.shields.io/badge/langchain-0.3.27-green)
-![PostgreSQL](https://img.shields.io/badge/postgresql-17-blue)
+
+
+![Python](https://img.shields.io/badge/python-3.13+-blue)![Python](https://img.shields.io/badge/python-3.13.9-blue)
+
+![LangChain](https://img.shields.io/badge/langchain-0.3.27-green)![LangChain](https://img.shields.io/badge/langchain-0.3.27-green)
+
+![License](https://img.shields.io/badge/license-Apache%202.0-blue)![PostgreSQL](https://img.shields.io/badge/postgresql-17-blue)
+
 ![License](https://img.shields.io/badge/license-MIT-green)
+
+Sistema de **Retrieval Augmented Generation (RAG)** para ingestão de documentos PDF e consultas semânticas com respostas baseadas **exclusivamente** no conteúdo dos documentos.
 
 Sistema de Retrieval Augmented Generation (RAG) para ingestão de documentos PDF e consultas semânticas usando LangChain, OpenAI e PostgreSQL com pgVector.
 
+## 🎯 O que faz?
+
 ## 📋 Índice
 
-- [Visão Geral](#-visão-geral)
-- [Arquitetura](#️-arquitetura)
+1. **Ingere documentos PDF** → Divide em chunks e armazena embeddings
+
+2. **Busca semântica** → Encontra os trechos mais relevantes- [Visão Geral](#-visão-geral)
+
+3. **Responde perguntas** → Usa LLM baseado **exclusivamente** no contexto encontrado- [Arquitetura](#️-arquitetura)
+
 - [Funcionalidades](#-funcionalidades)
-- [Pré-requisitos](#-pré-requisitos)
+
+### ✨ Características Principais- [Pré-requisitos](#-pré-requisitos)
+
 - [Instalação](#-instalação)
-- [Uso](#-uso)
-  - [Ingestão de PDFs](#ingestão-de-pdfs)
-  - [Chat Interativo](#chat-interativo)
-- [Casos de Teste](#-casos-de-teste)
+
+- ✅ Respostas baseadas **somente** no conteúdo dos documentos- [Uso](#-uso)
+
+- ✅ Mensagem clara quando a informação não está disponível  - [Ingestão de PDFs](#ingestão-de-pdfs)
+
+- ✅ Interface CLI simples e intuitiva  - [Chat Interativo](#chat-interativo)
+
+- ✅ Testes automatizados com avaliação LLM (LLM-as-a-Judge)- [Casos de Teste](#-casos-de-teste)
+
 - [Testes](#-testes)
-- [Troubleshooting](#-troubleshooting)
+
+## 🚀 Início Rápido- [Troubleshooting](#-troubleshooting)
+
 - [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Regras de Negócio](#-regras-de-negócio)
+
+### 1. Pré-requisitos- [Regras de Negócio](#-regras-de-negócio)
+
 - [Contribuindo](#-contribuindo)
-- [Licença](#-licença)
 
-## 🎯 Visão Geral
+- Python 3.13+- [Licença](#-licença)
 
-Este sistema implementa um pipeline completo de RAG:
+- Docker (para PostgreSQL)
 
-1. **Ingestão**: Processa PDFs, divide em chunks e armazena embeddings no PostgreSQL
-2. **Busca Semântica**: Encontra os 10 trechos mais relevantes por similaridade
-3. **Chat**: Interface CLI que responde perguntas baseado EXCLUSIVAMENTE no contexto recuperado
+- Chave de API da OpenAI## 🎯 Visão Geral
+
+
+
+### 2. InstalaçãoEste sistema implementa um pipeline completo de RAG:
+
+
+
+```bash1. **Ingestão**: Processa PDFs, divide em chunks e armazena embeddings no PostgreSQL
+
+# Clone o repositório2. **Busca Semântica**: Encontra os 10 trechos mais relevantes por similaridade
+
+git clone https://github.com/ribeiroelton/mba-ia-desafio-ingestao-busca.git3. **Chat**: Interface CLI que responde perguntas baseado EXCLUSIVAMENTE no contexto recuperado
+
+cd mba-ia-desafio-ingestao-busca
 
 ### Principais Características
 
-- ✅ Respostas baseadas **exclusivamente** no contexto dos documentos
-- ✅ Mensagem padrão quando informação não está disponível
-- ✅ Chunking inteligente (1000 chars, overlap 150)
+# Crie e ative o ambiente virtual
+
+python3 -m venv .venv- ✅ Respostas baseadas **exclusivamente** no contexto dos documentos
+
+source .venv/bin/activate  # Linux/Mac- ✅ Mensagem padrão quando informação não está disponível
+
+# ou .venv\Scripts\activate no Windows- ✅ Chunking inteligente (1000 chars, overlap 150)
+
 - ✅ Busca por similaridade de cosseno (top k=10)
-- ✅ Interface CLI intuitiva
-- ✅ Testes automatizados com cobertura >= 80%
 
-## 🏗️ Arquitetura
+# Instale as dependências- ✅ Interface CLI intuitiva
 
-```
+pip install -r requirements.txt- ✅ Testes automatizados com cobertura >= 80%
+
+
+
+# Inicie o PostgreSQL## 🏗️ Arquitetura
+
+docker-compose up -d
+
+``````
+
 ┌─────────────┐      ┌──────────────┐      ┌─────────────┐
-│  ingest.py  │─────▶│  PostgreSQL  │◀─────│  search.py  │
+
+### 3. Configure as Variáveis de Ambiente│  ingest.py  │─────▶│  PostgreSQL  │◀─────│  search.py  │
+
 │ (PDFs → DB) │      │  + pgVector  │      │ (Busca)     │
-└─────────────┘      └──────────────┘      └─────────────┘
+
+Crie um arquivo `.env` na raiz do projeto:└─────────────┘      └──────────────┘      └─────────────┘
+
                                                     │
-                                                    ▼
-                                            ┌─────────────┐
-                                            │  chat.py    │
+
+```bash                                                    ▼
+
+# PostgreSQL                                            ┌─────────────┐
+
+DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/rag                                            │  chat.py    │
+
                                             │  (CLI)      │
-                                            └─────────────┘
-                                                    │
-                                                    ▼
+
+# OpenAI                                            └─────────────┘
+
+OPENAI_API_KEY=sk-proj-sua-chave-aqui                                                    │
+
+```                                                    ▼
+
                                             ┌─────────────┐
-                                            │ OpenAI LLM  │
+
+## 💡 Como Usar                                            │ OpenAI LLM  │
+
                                             │ (Resposta)  │
-                                            └─────────────┘
+
+### Ingerir Documentos                                            └─────────────┘
+
 ```
 
-### Componentes
+```bash
+
+# Ingerir um PDF### Componentes
+
+python src/ingest.py documento.pdf
 
 - **ingest.py**: Carrega PDFs, gera chunks e embeddings, armazena no banco
-- **search.py**: Busca semântica com k=10 fixo
-- **chat.py**: Interface CLI para perguntas e respostas
-- **PostgreSQL + pgVector**: Armazenamento de embeddings
+
+# Com nome de coleção personalizado- **search.py**: Busca semântica com k=10 fixo
+
+python src/ingest.py relatorio.pdf --collection relatorios_2024- **chat.py**: Interface CLI para perguntas e respostas
+
+```- **PostgreSQL + pgVector**: Armazenamento de embeddings
+
 - **OpenAI**: Embeddings (text-embedding-3-small) e LLM (gpt-5-nano)
 
-## 🚀 Funcionalidades
+**Saída:**
 
-### UC-001: Ingestão de Documentos
-- Carrega arquivos PDF
-- Divide em chunks de 1000 caracteres (overlap 150)
-- Gera embeddings com OpenAI
-- Armazena no PostgreSQL com pgVector
+```## 🚀 Funcionalidades
+
+📄 Carregando PDF: documento.pdf
+
+✓ 15 páginas carregadas### UC-001: Ingestão de Documentos
+
+✂️  Dividindo em chunks...- Carrega arquivos PDF
+
+✓ 45 chunks criados- Divide em chunks de 1000 caracteres (overlap 150)
+
+💾 Armazenando embeddings...- Gera embeddings com OpenAI
+
+✅ Ingestão concluída!- Armazena no PostgreSQL com pgVector
+
+```
 
 ### UC-002: Consulta Semântica
-- Busca por similaridade de cosseno
-- Retorna top 10 trechos mais relevantes
-- Concatena contexto para o LLM
 
-### UC-003: Validação de Contexto
+### Fazer Perguntas (Chat)- Busca por similaridade de cosseno
+
+- Retorna top 10 trechos mais relevantes
+
+```bash- Concatena contexto para o LLM
+
+# Iniciar chat
+
+python src/chat.py### UC-003: Validação de Contexto
+
 - Respostas baseadas **exclusivamente** no contexto
-- Mensagem padrão quando informação não disponível:
-  > "Não tenho informações necessárias para responder sua pergunta."
+
+# Com coleção específica- Mensagem padrão quando informação não disponível:
+
+python src/chat.py --collection relatorios_2024  > "Não tenho informações necessárias para responder sua pergunta."
+
+```
 
 ## 📦 Pré-requisitos
 
+**Exemplo de uso:**
+
 - **Python**: 3.13.9
-- **Docker**: Para PostgreSQL
-- **OpenAI API Key**: Para embeddings e LLM
+
+```- **Docker**: Para PostgreSQL
+
+🤖 Sistema de Busca Semântica- **OpenAI API Key**: Para embeddings e LLM
+
+Digite 'sair' para encerrar
 
 ## 🔧 Instalação
 
+💬 Sua pergunta: Qual foi o faturamento em 2024?
+
 ### 1. Clone o Repositório
 
-```bash
+🔍 Buscando...
+
+💭 Gerando resposta...```bash
+
 git clone https://github.com/ribeiroelton/mba-ia-desafio-ingestao-busca.git
-cd mba-ia-desafio-ingestao-busca
+
+📝 Resposta:cd mba-ia-desafio-ingestao-busca
+
+O faturamento da empresa em 2024 foi de 10 milhões de reais.```
+
+
+
+💬 Sua pergunta: Qual é a capital da França?### 2. Configure PostgreSQL com Docker
+
+
+
+📝 Resposta:```bash
+
+Não tenho informações necessárias para responder sua pergunta.docker-compose up -d
+
 ```
 
-### 2. Configure PostgreSQL com Docker
+💬 Sua pergunta: sair
 
-```bash
-docker-compose up -d
+👋 Até logo!Isso inicia PostgreSQL 17 com pgVector na porta 5432.
+
 ```
-
-Isso inicia PostgreSQL 17 com pgVector na porta 5432.
 
 ### 3. Configure Ambiente Python
 
-```bash
-# Criar ambiente virtual
-python3.13 -m venv .venv
-
-# Ativar ambiente
-source .venv/bin/activate  # Linux/Mac
-# ou
-.venv\Scripts\activate     # Windows
-
-# Instalar dependências
-pip install -r requirements.txt
-```
-
-### 4. Configure Variáveis de Ambiente
-
-Crie arquivo `.env` na raiz:
-
-```bash
-# PostgreSQL
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/rag
-
-# OpenAI
-OPENAI_API_KEY=sk-your-key-here
-
-# Modelos (opcional)
-EMBEDDING_MODEL=text-embedding-3-small
-LLM_MODEL=gpt-5-nano
-```
-
-## 🎮 Uso
-
-### Ingestão de PDFs
-
-Ingira um ou mais documentos PDF:
-
-```bash
-# Ingerir um PDF
-python src/ingest.py relatorio_financeiro.pdf
-
-# Com coleção customizada
-python src/ingest.py documento.pdf --collection minha_colecao
-```
-
-**Saída esperada**:
-```
-📄 Carregando PDF: relatorio_financeiro.pdf
-✓ 15 páginas carregadas
-✂️  Dividindo em chunks (size=1000, overlap=150)
-✓ 45 chunks criados
-💾 Armazenando embeddings no PGVector...
-✓ Embeddings armazenados com sucesso
-✅ Ingestão concluída!
-```
-
-### Chat Interativo
-
-Inicie o chat para fazer perguntas:
-
-```bash
-# Chat padrão
-python src/chat.py
-
-# Com coleção específica
-python src/chat.py --collection minha_colecao
-```
-
-**Exemplo de interação**:
-```
-🤖 Sistema de Busca Semântica
-==================================================
-Digite 'quit', 'exit' ou 'sair' para encerrar
-
-💬 Faça sua pergunta: Qual foi o faturamento da empresa?
-
-🔍 Buscando informações...
-💭 Gerando resposta...
-
-📝 RESPOSTA:
---------------------------------------------------
-O faturamento da empresa foi de 10 milhões de reais em 2024.
---------------------------------------------------
-
-💬 Faça sua pergunta: Qual é a capital da França?
-
-🔍 Buscando informações...
-💭 Gerando resposta...
-
-📝 RESPOSTA:
---------------------------------------------------
-Não tenho informações necessárias para responder sua pergunta.
---------------------------------------------------
-
-💬 Faça sua pergunta: quit
-
-👋 Até logo!
-```
-
-## 🧪 Casos de Teste
-
-### CT-001: Pergunta com Contexto ✅
-
-**Cenário**: Documento contém "Faturamento foi 10 milhões"  
-**Pergunta**: "Qual foi o faturamento?"  
-**Resposta Esperada**: Informação correta do documento  
-
-### CT-002: Pergunta sem Contexto ✅
-
-**Cenário**: Documento sobre empresa, pergunta sobre capital de país  
-**Pergunta**: "Qual é a capital da França?"  
-**Resposta Esperada**: "Não tenho informações necessárias para responder sua pergunta."
-
-### CT-003: Informação Parcial ✅
-
-**Cenário**: Documento tem informação limitada  
-**Pergunta**: Requer informação não disponível  
-**Resposta Esperada**: Resposta com informação disponível ou admissão de limitação
-
 ## 🧪 Testes
 
-### Suite Otimizada
+```bash
 
-Nossa suite de testes foi otimizada para:
-- **Foco em Integração**: 70% testes E2E com LLM real
-- **Validação Real**: Usa gpt-5-nano para validar comportamento autêntico
-- **Performance**: Execução em ~45-55 segundos (redução de 35%)
+### Executar Todos os Testes# Criar ambiente virtual
+
+python3.13 -m venv .venv
+
+```bash
+
+# Suite completa (unitários + integração)# Ativar ambiente
+
+pytestsource .venv/bin/activate  # Linux/Mac
+
+# ou
+
+# Apenas testes rápidos (unitários).venv\Scripts\activate     # Windows
+
+pytest tests/unit/ -v
+
+# Instalar dependências
+
+# Com relatório de coberturapip install -r requirements.txt
+
+pytest --cov=src --cov-report=html```
+
+open htmlcov/index.html
+
+```### 4. Configure Variáveis de Ambiente
+
+
+
+### Validação CompletaCrie arquivo `.env` na raiz:
+
+
+
+Use o script de validação para verificar todo o ambiente:```bash
+
+# PostgreSQL
+
+```bashDATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/rag
+
+chmod +x scripts/validate.sh
+
+./scripts/validate.sh# OpenAI
+
+```OPENAI_API_KEY=sk-your-key-here
+
+
+
+Este script verifica:# Modelos (opcional)
+
+- ✅ Dependências Python instaladasEMBEDDING_MODEL=text-embedding-3-small
+
+- ✅ Variáveis de ambiente configuradasLLM_MODEL=gpt-5-nano
+
+- ✅ PostgreSQL rodando e acessível```
+
+- ✅ OpenAI API funcionando
+
+- ✅ Todos os testes passando## 🎮 Uso
+
+
+
+## 📋 Regras de Negócio### Ingestão de PDFs
+
+
+
+| Regra | Descrição |Ingira um ou mais documentos PDF:
+
+|-------|-----------|
+
+| **RN-001** | Respostas baseadas **exclusivamente** no contexto recuperado |```bash
+
+| **RN-002** | Mensagem padrão quando informação não disponível: _"Não tenho informações necessárias para responder sua pergunta."_ |# Ingerir um PDF
+
+| **RN-003** | Sistema nunca usa conhecimento externo ao documento |python src/ingest.py relatorio_financeiro.pdf
+
+| **RN-004** | Respostas objetivas e diretas |
+
+| **RN-005** | Chunks de 1000 caracteres com overlap de 150 |# Com coleção customizada
+
+| **RN-006** | Busca retorna exatamente 10 resultados (k=10) |python src/ingest.py documento.pdf --collection minha_colecao
+
+```
+
+## 🏗️ Arquitetura
+
+**Saída esperada**:
+
+``````
+
+PDF → Ingestão → PostgreSQL + pgVector → Busca → LLM → Resposta📄 Carregando PDF: relatorio_financeiro.pdf
+
+                      ↓✓ 15 páginas carregadas
+
+                  Embeddings✂️  Dividindo em chunks (size=1000, overlap=150)
+
+                  (OpenAI)✓ 45 chunks criados
+
+```💾 Armazenando embeddings no PGVector...
+
+✓ Embeddings armazenados com sucesso
+
+**Componentes:**✅ Ingestão concluída!
+
+- **src/ingest.py**: Processa PDFs e armazena embeddings```
+
+- **src/search.py**: Busca semântica por similaridade
+
+- **src/chat.py**: Interface CLI para perguntas/respostas### Chat Interativo
+
+- **PostgreSQL + pgVector**: Armazenamento de embeddings
+
+- **OpenAI**: Embeddings (text-embedding-3-small) + LLM (gpt-4o-mini)Inicie o chat para fazer perguntas:
+
+
+
+## 🔧 Troubleshooting```bash
+
+# Chat padrão
+
+### Erro: "Connection refused" (PostgreSQL)python src/chat.py
+
+
+
+```bash# Com coleção específica
+
+# Verificar se está rodandopython src/chat.py --collection minha_colecao
+
+docker ps | grep postgres```
+
+
+
+# Iniciar se necessário**Exemplo de interação**:
+
+docker-compose up -d```
+
+```🤖 Sistema de Busca Semântica
+
+==================================================
+
+### Erro: "Invalid API key"Digite 'quit', 'exit' ou 'sair' para encerrar
+
+
+
+1. Verifique se o arquivo `.env` existe💬 Faça sua pergunta: Qual foi o faturamento da empresa?
+
+2. Confirme que `OPENAI_API_KEY` está configurada corretamente
+
+3. Teste a chave em: https://platform.openai.com/api-keys🔍 Buscando informações...
+
+💭 Gerando resposta...
+
+### LLM inventa informações
+
+📝 RESPOSTA:
+
+O sistema está configurado para **nunca** usar conhecimento externo. Se isso ocorrer:--------------------------------------------------
+
+1. Verifique o `SYSTEM_PROMPT` em `src/chat.py`O faturamento da empresa foi de 10 milhões de reais em 2024.
+
+2. Execute os testes de integração: `pytest tests/integration/test_business_rules.py -v`--------------------------------------------------
+
+
+
+## 📁 Estrutura do Projeto💬 Faça sua pergunta: Qual é a capital da França?
+
+
+
+```🔍 Buscando informações...
+
+mba-ia-desafio-ingestao-busca/💭 Gerando resposta...
+
+├── src/
+
+│   ├── ingest.py          # Ingestão de PDFs📝 RESPOSTA:
+
+│   ├── search.py          # Busca semântica--------------------------------------------------
+
+│   └── chat.py            # Interface CLINão tenho informações necessárias para responder sua pergunta.
+
+├── tests/--------------------------------------------------
+
+│   ├── unit/              # Testes unitários
+
+│   ├── integration/       # Testes E2E com LLM real💬 Faça sua pergunta: quit
+
+│   └── utils/             # Framework de avaliação LLM
+
+├── scripts/👋 Até logo!
+
+│   └── validate.sh        # Script de validação completa```
+
+├── docker-compose.yaml    # PostgreSQL + pgVector
+
+├── requirements.txt       # Dependências## 🧪 Casos de Teste
+
+└── .env                   # Configurações (criar)
+
+```### CT-001: Pergunta com Contexto ✅
+
+
+
+## 📊 Métricas de Qualidade**Cenário**: Documento contém "Faturamento foi 10 milhões"  
+
+**Pergunta**: "Qual foi o faturamento?"  
+
+Nossa suite de testes inclui **avaliação automatizada com LLM-as-a-Judge**:**Resposta Esperada**: Informação correta do documento  
+
+
+
+- **31 testes unitários** (validação rápida)### CT-002: Pergunta sem Contexto ✅
+
+- **24 testes de integração** (18 com avaliação LLM)
+
+- **Cobertura**: 64%+ (focada em código crítico)**Cenário**: Documento sobre empresa, pergunta sobre capital de país  
+
+- **Tempo de execução**: ~50-60s**Pergunta**: "Qual é a capital da França?"  
+
+- **Custo por execução**: ~$0.03-0.05**Resposta Esperada**: "Não tenho informações necessárias para responder sua pergunta."
+
+
+
+Para mais detalhes, veja [tests/README.md](tests/README.md).### CT-003: Informação Parcial ✅
+
+
+
+## 🤝 Contribuindo**Cenário**: Documento tem informação limitada  
+
+**Pergunta**: Requer informação não disponível  
+
+1. Fork o projeto**Resposta Esperada**: Resposta com informação disponível ou admissão de limitação
+
+2. Crie uma branch: `git checkout -b feature/nova-funcionalidade`
+
+3. Commit: `git commit -m 'Adiciona nova funcionalidade'`## 🧪 Testes
+
+4. Push: `git push origin feature/nova-funcionalidade`
+
+5. Abra um Pull Request### Suite Otimizada
+
+
+
+**Requisitos:**Nossa suite de testes foi otimizada para:
+
+- Adicione testes para novas funcionalidades- **Foco em Integração**: 70% testes E2E com LLM real
+
+- Mantenha a cobertura acima de 60%- **Validação Real**: Usa gpt-5-nano para validar comportamento autêntico
+
+- Siga PEP 8- **Performance**: Execução em ~45-55 segundos (redução de 35%)
+
 - **Custo Controlado**: ~$0.02-0.05 por execução completa
+
+## 📝 Licença
 
 ### Estrutura
 
+Apache License 2.0 - veja [LICENSE](LICENSE) para detalhes.
+
 ```
-tests/
+
+## 🔗 Links Úteistests/
+
 ├── unit/                    # Testes unitários críticos (10 testes)
-│   ├── test_ingest_validation.py
-│   ├── test_search_validation.py
-│   └── test_chat_validation.py
+
+- [Documentação LangChain](https://python.langchain.com/)│   ├── test_ingest_validation.py
+
+- [OpenAI API](https://platform.openai.com/docs)│   ├── test_search_validation.py
+
+- [pgVector](https://github.com/pgvector/pgvector)│   └── test_chat_validation.py
+
 └── integration/             # Testes E2E (18 testes)
-    ├── test_business_rules.py    # RN-001 a RN-006
+
+---    ├── test_business_rules.py    # RN-001 a RN-006
+
     ├── test_e2e_core.py          # Fluxos principais
-    └── test_real_scenarios.py     # Cenários reais
+
+**Desenvolvido como parte do MBA em Inteligência Artificial**    └── test_real_scenarios.py     # Cenários reais
+
 ```
 
 ### Executar Testes
