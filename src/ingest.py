@@ -101,6 +101,11 @@ def store_in_vectorstore(chunks: List[Document], collection_name: str = "rag_doc
     if not database_url:
         raise ValueError("DATABASE_URL não configurada no .env")
     
+    # Verificar se há chunks para armazenar
+    if not chunks:
+        typer.echo("⚠️  Nenhum chunk para armazenar")
+        return
+    
     embedding_model = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
     
     typer.echo(f"🔢 Gerando embeddings com {embedding_model}")

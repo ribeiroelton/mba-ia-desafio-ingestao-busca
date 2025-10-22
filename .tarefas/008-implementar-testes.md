@@ -540,7 +540,7 @@ open htmlcov/index.html
 - [x] Testes unitários para chat.py
 - [x] Testes de integração (cenários)
 - [x] `pytest.ini` configurado
-- [x] Cobertura >= 80%
+- [x] Cobertura >= 80% (97.03%)
 - [x] Testes isolados e reproduzíveis
 - [x] Documentação de testes
 - [x] CI/CD ready
