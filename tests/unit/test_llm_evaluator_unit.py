@@ -272,3 +272,126 @@ class TestEvaluationCriteria:
         for criterion in criteria:
             assert len(criterion.examples_good) > 0
             assert len(criterion.examples_bad) > 0
+
+
+class TestCriteriaExamplesUsage:
+    """Testes para validar uso dos exemplos de critérios."""
+    
+    def test_get_criteria_examples_text(self):
+        """Testa formatação de exemplos de um critério."""
+        text = RagEvaluationCriteria.get_criteria_examples_text("adherence_to_context")
+        
+        # Validar estrutura
+        assert "CRITÉRIO: ADHERENCE_TO_CONTEXT" in text
+        assert "Peso:" in text
+        assert "Descrição:" in text
+        assert "✓ EXEMPLOS DE RESPOSTAS BOM:" in text
+        assert "✗ EXEMPLOS DE RESPOSTAS RUIM:" in text
+        
+        # Validar conteúdo dos exemplos
+        assert "cita trecho exato do contexto" in text
+        assert "inclui fatos não presentes no contexto" in text
+    
+    def test_get_criteria_examples_text_all_criteria(self):
+        """Testa formatação de exemplos para todos os critérios."""
+        criteria = RagEvaluationCriteria.get_all_criteria()
+        
+        for criterion in criteria:
+            text = RagEvaluationCriteria.get_criteria_examples_text(criterion.name)
+            
+            # Validar que cada exemplo está presente no texto formatado
+            for good_example in criterion.examples_good:
+                assert good_example in text, f"Exemplo bom não encontrado: {good_example}"
+            
+            for bad_example in criterion.examples_bad:
+                assert bad_example in text, f"Exemplo ruim não encontrado: {bad_example}"
+    
+    def test_get_criteria_examples_text_invalid_criterion(self):
+        """Testa erro ao tentar formatar exemplo de critério inexistente."""
+        with pytest.raises(ValueError, match="Critério 'invalid_criterion' não encontrado"):
+            RagEvaluationCriteria.get_criteria_examples_text("invalid_criterion")
+    
+    def test_evaluator_system_prompt_includes_examples(self):
+        """Testa que EVALUATOR_SYSTEM_PROMPT inclui exemplos de critérios."""
+        prompt = LLMEvaluator.EVALUATOR_SYSTEM_PROMPT
+        
+        # Validar que exemplos estão no prompt
+        assert "✓ EXEMPLOS DE BOAS RESPOSTAS:" in prompt
+        assert "✗ EXEMPLOS DE MÁS RESPOSTAS:" in prompt
+        
+        # Validar que alguns exemplos específicos estão presentes
+        assert "cita trecho exato do contexto" in prompt
+        assert "inventa estatísticas não presentes" in prompt
+        assert "Não produz opiniões ou interpretações" in prompt
+    
+    def test_get_failing_criterion_guidance_no_failures(self):
+        """Testa guia de critérios quando nenhum falhou."""
+        result = EvaluationResult(
+            score=85,
+            criteria_scores={
+                "adherence_to_context": 85,
+                "hallucination_detection": 90,
+                "rule_following": 80,
+                "clarity_objectivity": 75,
+            },
+            feedback="Tudo bem",
+            passed=True,
+            details={}
+        )
+        
+        guidance = LLMEvaluator.get_failing_criterion_guidance(result)
+        
+        assert "✓ Nenhum critério falhou!" in guidance
+    
+    def test_get_failing_criterion_guidance_with_failures(self):
+        """Testa guia de critérios quando há falhas."""
+        result = EvaluationResult(
+            score=55,
+            criteria_scores={
+                "adherence_to_context": 40,
+                "hallucination_detection": 30,
+                "rule_following": 75,
+                "clarity_objectivity": 80,
+            },
+            feedback="Detectadas alucinações e fatos externos",
+            passed=False,
+            details={}
+        )
+        
+        guidance = LLMEvaluator.get_failing_criterion_guidance(result, threshold=70)
+        
+        # Validar estrutura
+        assert "⚠️ CRITÉRIOS COM FALHA" in guidance
+        assert "HALLUCINATION_DETECTION" in guidance  # Nome formatado com underscore em caps
+        assert "ADHERENCE_TO_CONTEXT" in guidance  # Nome formatado com underscore em caps
+        assert "Detectadas alucinações e fatos externos" in guidance
+        
+        # Validar que exemplos dos critérios que falharam estão presentes
+        assert "✓ EXEMPLOS DE RESPOSTAS BOM:" in guidance
+        assert "✗ EXEMPLOS DE RESPOSTAS RUIM:" in guidance
+    
+    def test_get_failing_criterion_guidance_ordering(self):
+        """Testa que critérios falhando aparecem ordenados por score (pior primeiro)."""
+        result = EvaluationResult(
+            score=50,
+            criteria_scores={
+                "adherence_to_context": 60,
+                "hallucination_detection": 20,  # Pior
+                "rule_following": 50,  # Intermediário
+                "clarity_objectivity": 80,
+            },
+            feedback="Feedback teste",
+            passed=False,
+            details={}
+        )
+        
+        guidance = LLMEvaluator.get_failing_criterion_guidance(result, threshold=70)
+        
+        # Verificar que hallucination_detection (score 20) aparece antes de rule_following (score 50)
+        hallucination_pos = guidance.find("HALLUCINATION_DETECTION")
+        rule_following_pos = guidance.find("RULE_FOLLOWING")
+        
+        assert hallucination_pos != -1, "HALLUCINATION_DETECTION não encontrado no guidance"
+        assert rule_following_pos != -1, "RULE_FOLLOWING não encontrado no guidance"
+        assert hallucination_pos < rule_following_pos, \
+            "Critério com score mais baixo deveria aparecer primeiro"

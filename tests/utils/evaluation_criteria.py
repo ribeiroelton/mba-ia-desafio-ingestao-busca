@@ -95,6 +95,58 @@ class RagEvaluationCriteria:
         ]
     
     @classmethod
+    def get_criteria_examples_text(cls, criterion_name: str) -> str:
+        """
+        Formata exemplos de boas e más respostas para um critério.
+        
+        Útil para incluir em prompts do LLM e documentação.
+        
+        Args:
+            criterion_name: Nome do critério (ex: "adherence_to_context")
+            
+        Returns:
+            Texto formatado com exemplos bons e ruins
+            
+        Raises:
+            ValueError: Se critério não existe
+            
+        Example:
+            >>> text = RagEvaluationCriteria.get_criteria_examples_text("adherence_to_context")
+            >>> assert "BOM:" in text
+            >>> assert "RUIM:" in text
+        """
+        # Encontrar critério
+        criteria = cls.get_all_criteria()
+        criterion = None
+        for c in criteria:
+            if c.name == criterion_name:
+                criterion = c
+                break
+        
+        if criterion is None:
+            raise ValueError(f"Critério '{criterion_name}' não encontrado")
+        
+        # Formatar exemplos
+        lines = []
+        lines.append(f"CRITÉRIO: {criterion.name.upper()}")
+        lines.append(f"Peso: {int(criterion.weight * 100)}%")
+        lines.append(f"Descrição: {criterion.description}")
+        lines.append("")
+        
+        # Exemplos bons
+        lines.append("✓ EXEMPLOS DE RESPOSTAS BOM:")
+        for example in criterion.examples_good:
+            lines.append(f"  • {example}")
+        lines.append("")
+        
+        # Exemplos ruins
+        lines.append("✗ EXEMPLOS DE RESPOSTAS RUIM:")
+        for example in criterion.examples_bad:
+            lines.append(f"  • {example}")
+        
+        return "\n".join(lines)
+    
+    @classmethod
     def calculate_weighted_score(cls, scores: Dict[str, int]) -> int:
         """
         Calcula score ponderado baseado nos critérios.

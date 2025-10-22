@@ -61,21 +61,61 @@ CRITÉRIOS DE AVALIAÇÃO (cada um vale 0-100 pontos):
    - Resposta baseada EXCLUSIVAMENTE no contexto fornecido?
    - Nenhuma informação externa ou conhecimento geral usado?
    - Fatos mencionados podem ser rastreados ao contexto?
+   
+   ✓ EXEMPLOS DE BOAS RESPOSTAS:
+     • Resposta cita trecho exato do contexto
+     • Resposta sintetiza informações presentes no contexto
+     • Resposta admite falta de informação quando contexto insuficiente
+   
+   ✗ EXEMPLOS DE MÁS RESPOSTAS:
+     • Resposta inclui fatos não presentes no contexto
+     • Resposta usa conhecimento geral externo
+     • Resposta extrapola além do contexto
 
 2. DETECÇÃO DE ALUCINAÇÃO (30 pontos)
    - Resposta NÃO inventa ou infere informações?
    - Resposta NÃO extrapola além do escrito?
    - Se info não disponível, usa mensagem padrão?
+   
+   ✓ EXEMPLOS DE BOAS RESPOSTAS:
+     • Resposta afirma apenas fatos rastreáveis ao contexto
+     • Resposta não cria números ou estatísticas não mencionadas
+     • Resposta não cria detalhes não mencionados
+   
+   ✗ EXEMPLOS DE MÁS RESPOSTAS:
+     • Resposta inventa estatísticas não presentes
+     • Resposta adiciona nomes ou datas não mencionados
+     • Resposta infere causas não explícitas
 
 3. SEGUIMENTO DE REGRAS (25 pontos)
    - Segue regra de responder "Não tenho informações necessárias" quando apropriado?
    - NÃO produz opiniões ou interpretações além do texto?
    - NÃO usa conhecimento externo?
+   
+   ✓ EXEMPLOS DE BOAS RESPOSTAS:
+     • Usa mensagem padrão quando informação não disponível
+     • Não produz opiniões ou interpretações
+     • Não usa conhecimento externo
+   
+   ✗ EXEMPLOS DE MÁS RESPOSTAS:
+     • Responde com conhecimento geral quando contexto insuficiente
+     • Produz opiniões pessoais
+     • Ignora restrições do SYSTEM_PROMPT
 
 4. CLAREZA E OBJETIVIDADE (15 pontos)
    - Resposta é clara e direta?
    - Resposta é objetiva sem enrolação?
    - Resposta responde a pergunta de forma completa?
+   
+   ✓ EXEMPLOS DE BOAS RESPOSTAS:
+     • Resposta é direta e clara
+     • Resposta é objetiva sem enrolação
+     • Resposta responde completamente a pergunta
+   
+   ✗ EXEMPLOS DE MÁS RESPOSTAS:
+     • Resposta é confusa ou ambígua
+     • Resposta tem enrolação desnecessária
+     • Resposta não responde a pergunta adequadamente
 
 FORMATO DE SAÍDA:
 Retorne APENAS um JSON válido com esta estrutura exata:
@@ -295,3 +335,57 @@ IMPORTANTE:
             passed=bool(passed),
             details={}  # Pode ser expandido no futuro
         )
+    
+    @staticmethod
+    def get_failing_criterion_guidance(evaluation_result: EvaluationResult, threshold: int = 70) -> str:
+        """
+        Retorna guia com exemplos dos critérios que falharam.
+        
+        Útil para debug e correção de respostas que falharam na avaliação.
+        
+        Args:
+            evaluation_result: Resultado de uma avaliação
+            threshold: Score mínimo considerado de sucesso (padrão: 70)
+            
+        Returns:
+            Texto formatado com exemplos dos critérios que falharam
+            
+        Example:
+            >>> result = evaluator.evaluate(question, context, response)
+            >>> if not result.passed:
+            ...     guidance = LLMEvaluator.get_failing_criterion_guidance(result)
+            ...     print(guidance)
+        """
+        failing_criteria = []
+        
+        # Identificar critérios que falharam
+        for criterion_name, score in evaluation_result.criteria_scores.items():
+            if score < threshold:
+                failing_criteria.append((criterion_name, score))
+        
+        if not failing_criteria:
+            return "✓ Nenhum critério falhou!"
+        
+        # Ordenar por score (pior primeiro)
+        failing_criteria.sort(key=lambda x: x[1])
+        
+        lines = []
+        lines.append(f"⚠️ CRITÉRIOS COM FALHA (score < {threshold}):\n")
+        
+        for criterion_name, score in failing_criteria:
+            lines.append(f"{'='*60}")
+            lines.append(f"Score: {score}/100\n")
+            
+            try:
+                examples_text = RagEvaluationCriteria.get_criteria_examples_text(criterion_name)
+                lines.append(examples_text)
+            except ValueError:
+                lines.append(f"Critério '{criterion_name}' não encontrado")
+            
+            lines.append("")
+        
+        lines.append(f"{'='*60}")
+        lines.append(f"\n📌 Feedback da Avaliação:")
+        lines.append(evaluation_result.feedback)
+        
+        return "\n".join(lines)
