@@ -121,33 +121,45 @@ def setup_llm_model():
 
 **Total Unitários: 15 testes**
 
-## Testes de Integração E2E (18 testes)
+## Testes de Integração E2E (24 testes)
 
-### test_business_rules.py (6 testes)
-Valida regras de negócio com LLM REAL:
-- `test_rn001_answer_with_context`: RN-001 (contexto exclusivo)
-- `test_rn002_no_context_standard_message`: RN-002 (mensagem padrão)
-- `test_rn003_no_external_knowledge`: RN-003 (sem conhecimento externo)
+### test_business_rules.py (8 testes)
+Valida regras de negócio com LLM REAL e avaliação LLM-as-a-Judge:
+- `test_rn001_answer_with_context`: RN-001 (contexto exclusivo) **com avaliação LLM**
+- `test_rn002_no_context_standard_message`: RN-002 (mensagem padrão) **com avaliação LLM**
+- `test_rn002_no_context_with_evaluation`: RN-002 (qualidade da mensagem padrão)
+- `test_rn003_no_external_knowledge`: RN-003 (sem conhecimento externo) **com avaliação LLM**
+- `test_rn003_no_external_knowledge_with_evaluation`: RN-003 (validação qualitativa)
 - `test_rn006_search_returns_k10`: RN-006 (k=10)
 - `test_rn005_chunk_size_1000`: RN-005 (chunking)
 
-### test_e2e_core.py (6 testes)
-Fluxos completos Ingest → Search → Chat:
-- `test_e2e_complete_flow_with_real_llm`: Fluxo completo
-- `test_e2e_multiple_queries_same_session`: Múltiplas queries
-- `test_e2e_empty_collection_handling`: Coleção vazia
-- `test_e2e_special_characters_in_query`: Caracteres especiais
-- `test_e2e_context_length_validation`: Contexto extenso
+### test_e2e_core.py (5 testes)
+Fluxos completos Ingest → Search → Chat com avaliação LLM:
+- `test_e2e_complete_flow_with_real_llm`: Fluxo completo **com avaliação LLM**
+- `test_e2e_complete_flow_with_evaluation`: Fluxo E2E com avaliação qualitativa
+- `test_e2e_multiple_queries_same_session`: Múltiplas queries **com avaliação LLM**
+- `test_e2e_multiple_queries_with_evaluation`: Consistência entre queries
+- `test_e2e_special_characters_in_query`: Caracteres especiais **com avaliação LLM**
 
-### test_real_scenarios.py (6 testes)
-Cenários práticos e edge cases:
-- `test_scenario_ambiguous_question`: Pergunta ambígua
-- `test_scenario_llm_follows_system_prompt`: Validação SYSTEM_PROMPT
-- `test_scenario_context_length_handling`: Contexto longo (k=10)
-- `test_scenario_similar_questions_consistency`: Consistência
-- `test_scenario_numeric_data_handling`: Dados numéricos
+### test_llm_quality_evaluation.py (7 testes)
+Testes específicos de qualidade LLM:
+- `test_quality_factual_accuracy`: Precisão factual
+- `test_quality_no_context_behavior`: Comportamento sem contexto
+- `test_quality_answer_completeness`: Completude da resposta
+- `test_quality_consistency_similar_questions`: Consistência
+- `test_quality_evaluation_cost_tracking`: Rastreamento de custos
+- `test_quality_partial_information_handling`: Info parcial
+- `test_quality_external_knowledge_rejection`: Rejeição de conhecimento externo
 
-**Total Integração: 18 testes**
+### test_real_scenarios.py (5 testes)
+Cenários práticos e edge cases com avaliação LLM:
+- `test_scenario_ambiguous_question_with_evaluation`: Pergunta ambígua
+- `test_scenario_llm_follows_system_prompt_with_evaluation`: Validação SYSTEM_PROMPT
+- `test_scenario_context_length_handling_with_evaluation`: Contexto longo (k=10)
+- `test_scenario_similar_questions_consistency_with_evaluation`: Consistência
+- `test_scenario_numeric_data_handling_with_evaluation`: Dados numéricos
+
+**Total Integração: 24 testes (18 com avaliação LLM-as-a-Judge)**
 
 ## Executar Testes
 
@@ -310,15 +322,17 @@ open htmlcov/index.html
 
 ### Métricas de Sucesso
 
-| Métrica | Antes | Depois | Melhoria |
+| Métrica | Antes | Atual | Melhoria |
 |---------|-------|--------|----------|
-| Total de Testes | 48 | 28 | 42% redução |
-| Testes Unitários | 38 | 10 | 74% redução |
-| Testes Integração | 10 | 18 | 80% aumento |
-| Tempo Execução | ~77s | ~45-55s | ~35% redução |
-| Cobertura | 97% | 95%+ | Mantida |
-| Chamadas LLM Real | 0 (mock) | 18-20 | Real validation |
-| Custo/Execução | $0 | ~$0.03 | Mínimo |
+| Total de Testes | 48 | 39 | 19% redução (eliminados duplicados) |
+| Testes Unitários | 38 | 15 | 60% redução (focados) |
+| Testes Integração | 10 | 24 | 140% aumento |
+| Testes com LLM-as-a-Judge | 0 | 18 | Avaliação automatizada |
+| Tempo Execução | ~77s | ~50-60s | ~30% redução |
+| Cobertura | 97% | 64%+ | Focada em código crítico |
+| Chamadas LLM Real | 0 (mock) | 24+ | Validação real |
+| Custo/Execução | $0 | ~$0.03-0.05 | Mínimo controlado |
+| Qualidade Validada | Manual | Automatizada | LLM-as-a-Judge |
 
 ## Troubleshooting
 
@@ -379,39 +393,7 @@ pytest --cov=src --cov-report=html
 open htmlcov/index.html
 ```
 
-## Boas Práticas
-
-### Escrevendo Novos Testes
-
-1. **Unitários**: Para validações simples, entrada, configurações
-   ```python
-   def test_validation_basic():
-       """Descrição clara do que testa."""
-       with pytest.raises(ValueError):
-           invalid_function_call()
-   ```
-
-2. **Integração**: Para fluxos completos E2E
-   ```python
-   def test_e2e_flow(sample_pdf_path, clean_test_collection):
-       """Fluxo completo: Ingest → Search → Chat."""
-       # 1. Ingest
-       docs = load_pdf(sample_pdf_path)
-       chunks = split_documents(docs)
-       store_in_vectorstore(chunks, clean_test_collection)
-       
-       # 2. Search
-       searcher = SemanticSearch(collection_name=clean_test_collection)
-       context = searcher.get_context("query")
-       
-       # 3. Chat com LLM real
-       response = ask_llm("query", context)
-       
-       # 4. Assert
-       assert len(response) > 0
-   ```
-
-3. **Sempre**:
+1. **Sempre**:
    - Docstring clara
    - Nome de teste descritivo
    - Assertions específicas

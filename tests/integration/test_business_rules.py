@@ -39,9 +39,9 @@ def ingested_test_doc(sample_pdf_path, shared_test_collection):
         pass
 
 
-def test_rn001_answer_with_context(ingested_test_doc):
+def test_rn001_answer_with_context(ingested_test_doc, llm_evaluator):
     """
-    RN-001: Respostas baseadas EXCLUSIVAMENTE no contexto.
+    RN-001: Respostas baseadas EXCLUSIVAMENTE no contexto com AVALIAÇÃO LLM.
     
     Cenário: Documento contém informação específica
     Query: Pergunta sobre informação presente no documento
@@ -52,27 +52,43 @@ def test_rn001_answer_with_context(ingested_test_doc):
     searcher = SemanticSearch(collection_name=ingested_test_doc)
     
     # Buscar contexto para pergunta genérica sobre o documento
-    context = searcher.get_context("Qual é o conteúdo principal do documento?")
+    question = "Qual é o conteúdo principal do documento?"
+    context = searcher.get_context(question)
     
     # Validar que contexto foi recuperado
     assert len(context) > 0, "Contexto não recuperado"
     
     # Usar gpt-5-nano REAL para gerar resposta
-    response = ask_llm(
-        question="Qual é o conteúdo principal do documento?",
-        context=context
-    )
+    response = ask_llm(question=question, context=context)
     
-    # Validações
+    # Validações estruturais
     assert isinstance(response, str), "Resposta deve ser string"
     assert len(response) > 0, "Resposta não pode ser vazia"
-    # Resposta não deve ser mensagem padrão (há contexto disponível)
-    assert "Não tenho informações necessárias" not in response
+    assert "Não tenho informações necessárias" not in response, \
+        "Não deve retornar mensagem padrão quando há contexto"
+    
+    # AVALIAÇÃO QUALITATIVA
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # RN-001: Resposta deve aderir ao contexto
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70, \
+        "Resposta deve ser baseada no contexto (RN-001)"
+    
+    assert evaluation.criteria_scores["hallucination_detection"] >= 70, \
+        "Não deve inventar informações (RN-003)"
+    
+    assert evaluation.overall_score >= 70, \
+        f"Resposta com contexto deve ter qualidade adequada\n{evaluation.feedback}"
 
 
-def test_rn002_no_context_standard_message(ingested_test_doc):
+def test_rn002_no_context_standard_message(ingested_test_doc, llm_evaluator):
     """
-    RN-002: Mensagem padrão quando informação não disponível.
+    RN-002: Mensagem padrão quando informação não disponível com AVALIAÇÃO LLM.
     
     Cenário: Pergunta completamente fora do contexto do documento
     Query: "Qual é a capital da França?" (informação não presente)
@@ -87,15 +103,30 @@ def test_rn002_no_context_standard_message(ingested_test_doc):
     context = searcher.get_context(question)
     
     # Usar gpt-5-nano REAL para gerar resposta
-    response = ask_llm(
-        question=question,
-        context=context
-    )
+    response = ask_llm(question=question, context=context)
     
     # Validar mensagem padrão
     assert isinstance(response, str), "Resposta deve ser string"
     assert "Não tenho informações necessárias" in response, \
         "LLM deve retornar mensagem padrão para perguntas fora do contexto"
+    
+    # AVALIAÇÃO QUALITATIVA
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Mensagem padrão deve ter score alto
+    assert evaluation.criteria_scores["rule_following"] >= 85, \
+        "Deve seguir regra RN-002 corretamente"
+    
+    assert evaluation.criteria_scores["hallucination_detection"] >= 90, \
+        "Não deve inventar resposta quando não sabe (RN-003)"
+    
+    assert evaluation.overall_score >= 80, \
+        f"Mensagem padrão correta deve ter score alto\n{evaluation.feedback}"
 
 
 def test_rn002_no_context_with_evaluation(ingested_test_doc, llm_evaluator):
@@ -132,9 +163,9 @@ def test_rn002_no_context_with_evaluation(ingested_test_doc, llm_evaluator):
         f"Mensagem padrão correta deve ter score alto\n{evaluation.feedback}"
 
 
-def test_rn003_no_external_knowledge(ingested_test_doc):
+def test_rn003_no_external_knowledge(ingested_test_doc, llm_evaluator):
     """
-    RN-003: Sistema nunca deve usar conhecimento externo.
+    RN-003: Sistema nunca deve usar conhecimento externo com AVALIAÇÃO LLM.
     
     Cenário: Pergunta sobre fato conhecido mas não presente no documento
     Expected: Mensagem padrão, não resposta com conhecimento externo
@@ -152,6 +183,24 @@ def test_rn003_no_external_knowledge(ingested_test_doc):
     # LLM NÃO deve responder com conhecimento externo
     assert "Não tenho informações necessárias" in response, \
         "LLM não deve usar conhecimento externo (RN-003)"
+    
+    # AVALIAÇÃO QUALITATIVA
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Deve evitar conhecimento externo
+    assert evaluation.criteria_scores["adherence_to_context"] >= 80, \
+        "Não deve usar conhecimento externo (RN-003)"
+    
+    assert evaluation.criteria_scores["rule_following"] >= 85, \
+        "Deve seguir regra de não usar conhecimento externo"
+    
+    assert evaluation.overall_score >= 80, \
+        f"Mensagem padrão para evitar conhecimento externo\n{evaluation.feedback}"
 
 
 def test_rn003_no_external_knowledge_with_evaluation(ingested_test_doc, llm_evaluator):

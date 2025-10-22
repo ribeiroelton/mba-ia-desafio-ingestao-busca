@@ -26,11 +26,13 @@ Implementado framework completo de avaliação automatizada de qualidade de outp
 ### Testes Implementados
 - ✅ **16 testes unitários** do framework (100% cobertura)
 - ✅ **7 testes de qualidade LLM** específicos
-- ✅ **5 testes em real_scenarios** com avaliação
-- ✅ **2 testes em business_rules** com avaliação
-- ✅ **2 testes em e2e_core** com avaliação
+- ✅ **11 testes de integração** com avaliação LLM
+  - 3 testes em business_rules (RN-001, RN-002, RN-003)
+  - 3 testes em e2e_core (fluxo completo, múltiplas queries, caracteres especiais)
+  - 5 testes em real_scenarios (cenários práticos)
 
-**Total**: 31 testes unitários + 24 testes de integração = **55 testes**
+**Total**: 31 testes unitários + 24 testes de integração = **55 testes**  
+**Testes com avaliação LLM**: 18 testes (75% dos testes de integração)
 
 ## 📁 Arquivos Criados
 
@@ -58,21 +60,29 @@ Implementado framework completo de avaliação automatizada de qualidade de outp
 ### Configuração
 - **tests/conftest.py**: Adicionada fixture `llm_evaluator`
 
-### Testes de Integração Limpos
+### Testes de Integração Limpos e Melhorados
 - **tests/integration/test_real_scenarios.py**:
   - Removidos 5 testes duplicados sem avaliação
   - Mantidos 5 testes com avaliação LLM integrada
   
 - **tests/integration/test_business_rules.py**:
-  - Adicionados 2 testes com avaliação LLM
+  - **ATUALIZADO**: 3 testes principais agora COM avaliação LLM
+  - `test_rn001_answer_with_context`: Validação qualitativa RN-001
+  - `test_rn002_no_context_standard_message`: Validação qualitativa RN-002
+  - `test_rn003_no_external_knowledge`: Validação qualitativa RN-003
+  - Mantidos 2 testes adicionais com avaliação (duplicatas focadas em qualidade)
   - Importado SYSTEM_PROMPT
   
 - **tests/integration/test_e2e_core.py**:
-  - Adicionados 2 testes com avaliação LLM
+  - **ATUALIZADO**: 3 testes principais agora COM avaliação LLM
+  - `test_e2e_complete_flow_with_real_llm`: Fluxo E2E completo
+  - `test_e2e_multiple_queries_same_session`: Múltiplas queries
+  - `test_e2e_special_characters_in_query`: Caracteres especiais
+  - Mantidos 2 testes adicionais com avaliação (duplicatas focadas em qualidade)
   - Removido 1 teste redundante (empty collection)
   
 ### Documentação
-- **tests/README.md**: Seção completa sobre LLM Evaluation Tests
+- **tests/README.md**: Seção completa atualizada com todos os testes com LLM-as-a-Judge
 
 ## 🔬 Validações de Regras de Negócio
 
@@ -138,20 +148,31 @@ Cobertura: 64% (100% dos novos módulos)
 - ✅ Critérios extensíveis
 - ✅ Sem mocks (validação real)
 
-## 🧹 Limpezas Realizadas
+## 🧹 Limpezas e Melhorias Realizadas
 
-### Testes Duplicados Removidos
+### Fase 1: Testes Duplicados Removidos (test_real_scenarios.py)
 1. ❌ `test_scenario_ambiguous_question` → Mantido apenas versão com avaliação
 2. ❌ `test_scenario_llm_follows_system_prompt` → Mantido apenas versão com avaliação
 3. ❌ `test_scenario_context_length_handling` → Mantido apenas versão com avaliação
 4. ❌ `test_scenario_similar_questions_consistency` → Mantido apenas versão com avaliação
 5. ❌ `test_scenario_numeric_data_handling` → Mantido apenas versão com avaliação
-6. ❌ `test_e2e_empty_collection_handling` → Removido (redundante)
 
-### Consolidação
-- Testes similares consolidados
-- Apenas versões com avaliação LLM mantidas
-- Suite mais limpa e eficiente
+### Fase 2: Testes Melhorados (test_business_rules.py)
+- ✅ `test_rn001_answer_with_context`: Adicionada avaliação LLM completa
+- ✅ `test_rn002_no_context_standard_message`: Adicionada avaliação LLM completa
+- ✅ `test_rn003_no_external_knowledge`: Adicionada avaliação LLM completa
+
+### Fase 3: Testes Melhorados (test_e2e_core.py)
+- ✅ `test_e2e_complete_flow_with_real_llm`: Adicionada avaliação LLM completa
+- ✅ `test_e2e_multiple_queries_same_session`: Adicionada avaliação LLM completa
+- ✅ `test_e2e_special_characters_in_query`: Adicionada avaliação LLM completa
+- ❌ `test_e2e_empty_collection_handling`: Removido (redundante)
+
+### Consolidação Final
+- **Testes principais**: TODOS agora com avaliação LLM
+- **Testes duplicados**: Eliminados
+- **Suite mais limpa**: Redução de duplicações
+- **Cobertura completa**: 18 testes de integração com LLM-as-a-Judge (75%)
 
 ## 🔧 Configuração Técnica
 
@@ -203,9 +224,10 @@ Cobertura: 64% (100% dos novos módulos)
 - [x] Critérios de avaliação definidos
 - [x] 16 testes unitários (100% cobertura)
 - [x] 7 testes de qualidade LLM
-- [x] 11 testes integrados com avaliação
-- [x] Testes duplicados removidos
-- [x] Documentação completa
+- [x] 18 testes de integração com avaliação LLM (75% do total)
+- [x] Testes duplicados removidos (5 em real_scenarios + 1 em e2e)
+- [x] Testes principais melhorados com avaliação LLM
+- [x] Documentação completa e atualizada
 - [x] Type hints e docstrings
 - [x] Custos documentados
 - [x] PR criado (#12)
@@ -221,9 +243,11 @@ Cobertura: 64% (100% dos novos módulos)
 - **Arquivos modificados**: 5
 
 ### Testes
-- **Unitários**: 31 (16 novos)
-- **Integração**: 24 (11 com avaliação)
-- **Cobertura**: 100% dos novos módulos
+- **Unitários**: 31 (16 novos do framework)
+- **Integração**: 24 total
+  - 18 com avaliação LLM-as-a-Judge (75%)
+  - 6 sem avaliação (testes técnicos de configuração)
+- **Cobertura**: 100% dos novos módulos, 64% geral
 
 ### Qualidade
 - **Todos os testes passando**: ✅
