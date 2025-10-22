@@ -78,6 +78,61 @@ Você deve ver:
 ✅ Ambiente configurado corretamente!
 ```
 
+## Testes e Validação
+
+### Executar Todos os Testes
+
+```bash
+# Executar suite completa de testes
+pytest
+
+# Executar com cobertura
+pytest --cov=src --cov-report=term --cov-report=html
+```
+
+### Validação Completa Automatizada
+
+```bash
+# Executar validação completa (testes + cobertura + cenários críticos)
+./scripts/run_full_validation.sh
+```
+
+O script executa:
+1. Limpeza do ambiente
+2. Validação de dependências
+3. Verificação de variáveis de ambiente
+4. Testes unitários
+5. Testes de integração
+6. Geração de relatório de cobertura
+7. Validação de cenários críticos (CT-001, CT-002, CT-003)
+
+### Análise de Cobertura
+
+```bash
+# Analisar cobertura detalhada
+python scripts/analyze_coverage.py
+
+# Visualizar relatório HTML
+open htmlcov/index.html  # macOS
+# ou
+xdg-open htmlcov/index.html  # Linux
+# ou
+start htmlcov/index.html  # Windows
+```
+
+### Validação Manual
+
+Para validação manual completa, siga o checklist em:
+- `docs/manual-validation-checklist.md`
+
+### Métricas de Qualidade
+
+- **Cobertura de Testes**: >= 97%
+- **Testes Aprovados**: 57/57 (100%)
+- **Cenários Críticos**: CT-001, CT-002, CT-003 validados
+
+Para mais detalhes, consulte:
+- `docs/test-results.md` - Resultados detalhados de validação
 
 ## Licença
 
