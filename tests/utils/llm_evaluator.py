@@ -21,7 +21,6 @@ class EvaluationResult:
     criteria_scores: Dict[str, int]  # Scores por critério
     feedback: str  # Feedback detalhado
     passed: bool  # Se passou no threshold
-    details: Dict[str, str]  # Detalhes por critério
     
     @property
     def overall_score(self) -> int:
@@ -33,22 +32,8 @@ class LLMEvaluator:
     """
     Avaliador de qualidade de respostas LLM usando LLM-as-a-Judge pattern.
     
-    Usa um segundo LLM para avaliar objetivamente se a resposta:
-    - Segue SYSTEM_PROMPT rigorosamente
-    - Está baseada exclusivamente no contexto
-    - Não contém alucinações
-    - É clara, objetiva e direta
-    
-    Example:
-        >>> evaluator = LLMEvaluator(threshold=70)
-        >>> result = evaluator.evaluate(
-        ...     question="Qual o faturamento?",
-        ...     context="Faturamento de R$10M",
-        ...     response="O faturamento é de R$10M"
-        ... )
-        >>> assert result.passed
-        >>> print(result.score)
-        85
+    Usa um segundo LLM para avaliar objetivamente se a resposta segue
+    o SYSTEM_PROMPT rigorosamente e está baseada exclusivamente no contexto.
     """
     
     EVALUATOR_SYSTEM_PROMPT = """Você é um avaliador especializado em validar respostas de sistemas RAG.
@@ -132,15 +117,6 @@ IMPORTANTE:
             
         Raises:
             ValueError: Se avaliação falhar ou JSON inválido
-            
-        Example:
-            >>> evaluator = LLMEvaluator()
-            >>> result = evaluator.evaluate(
-            ...     question="Quantos funcionários?",
-            ...     context="A empresa tem 50 funcionários",
-            ...     response="A empresa tem 50 funcionários"
-            ... )
-            >>> assert result.passed
         """
         # Montar prompt de avaliação
         evaluation_prompt = self.build_evaluation_prompt(
@@ -228,38 +204,17 @@ IMPORTANTE:
         Raises:
             json.JSONDecodeError: Se JSON inválido
         """
-        # Tentar extrair JSON do texto (pode ter markdown)
         text = response_text.strip()
         
         # Remover markdown code blocks se presentes
-        if text.startswith("```json"):
-            text = text[7:]
-        elif text.startswith("```"):
-            text = text[3:]
-        
-        if text.endswith("```"):
-            text = text[:-3]
+        if text.startswith("```json") or text.startswith("```"):
+            text = text.split("```")[1]
+            if text.startswith("json"):
+                text = text[4:]
         
         text = text.strip()
         
-        # Tentar parsear JSON normalmente primeiro
-        try:
-            return json.loads(text, strict=False)
-        except json.JSONDecodeError:
-            # Se falhar, tentar corrigir problemas comuns com feedback
-            # Escapar aspas dentro do campo feedback
-            import re
-            # Encontrar o campo feedback e escapar aspas dentro dele
-            pattern = r'"feedback":\s*"([^"]*(?:"[^"]*)*)"'
-            
-            def escape_feedback(match):
-                feedback_content = match.group(1)
-                # Escapar apenas aspas que não são de fechamento do JSON
-                escaped = feedback_content.replace('\n', ' ').replace('\r', '')
-                return f'"feedback": "{escaped}"'
-            
-            text_fixed = re.sub(pattern, escape_feedback, text, flags=re.DOTALL)
-            return json.loads(text_fixed, strict=False)
+        return json.loads(text, strict=False)
     
     def _build_evaluation_result(self, data: Dict) -> EvaluationResult:
         """
@@ -292,6 +247,5 @@ IMPORTANTE:
             score=int(overall_score),
             criteria_scores=criteria_scores,
             feedback=data.get("feedback", ""),
-            passed=bool(passed),
-            details={}  # Pode ser expandido no futuro
+            passed=bool(passed)
         )

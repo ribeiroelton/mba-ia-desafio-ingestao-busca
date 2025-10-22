@@ -13,8 +13,6 @@ class EvaluationCriterion:
     name: str
     weight: float  # 0.0-1.0
     description: str
-    examples_good: List[str]
-    examples_bad: List[str]
 
 
 class RagEvaluationCriteria:
@@ -23,65 +21,25 @@ class RagEvaluationCriteria:
     ADHERENCE_TO_CONTEXT = EvaluationCriterion(
         name="adherence_to_context",
         weight=0.30,
-        description="Resposta baseada exclusivamente no contexto fornecido",
-        examples_good=[
-            "Resposta cita trecho exato do contexto",
-            "Resposta sintetiza informações presentes no contexto",
-            "Resposta admite falta de informação quando contexto insuficiente"
-        ],
-        examples_bad=[
-            "Resposta inclui fatos não presentes no contexto",
-            "Resposta usa conhecimento geral externo",
-            "Resposta extrapola além do contexto"
-        ]
+        description="Resposta baseada exclusivamente no contexto fornecido"
     )
     
     HALLUCINATION_DETECTION = EvaluationCriterion(
         name="hallucination_detection",
         weight=0.30,
-        description="Detecção de alucinações e informações inventadas",
-        examples_good=[
-            "Resposta afirma apenas fatos rastreáveis ao contexto",
-            "Resposta não cria números ou estatísticas não mencionadas",
-            "Resposta não cria detalhes não mencionados"
-        ],
-        examples_bad=[
-            "Resposta inventa estatísticas não presentes",
-            "Resposta adiciona nomes ou datas não mencionados",
-            "Resposta infere causas não explícitas"
-        ]
+        description="Detecção de alucinações e informações inventadas"
     )
     
     RULE_FOLLOWING = EvaluationCriterion(
         name="rule_following",
         weight=0.25,
-        description="Seguimento rigoroso do SYSTEM_PROMPT",
-        examples_good=[
-            "Usa mensagem padrão quando informação não disponível",
-            "Não produz opiniões ou interpretações",
-            "Não usa conhecimento externo"
-        ],
-        examples_bad=[
-            "Responde com conhecimento geral quando contexto insuficiente",
-            "Produz opiniões pessoais",
-            "Ignora restrições do SYSTEM_PROMPT"
-        ]
+        description="Seguimento rigoroso do SYSTEM_PROMPT"
     )
     
     CLARITY_OBJECTIVITY = EvaluationCriterion(
         name="clarity_objectivity",
         weight=0.15,
-        description="Clareza e objetividade da resposta",
-        examples_good=[
-            "Resposta é direta e clara",
-            "Resposta é objetiva sem enrolação",
-            "Resposta responde completamente a pergunta"
-        ],
-        examples_bad=[
-            "Resposta é confusa ou ambígua",
-            "Resposta tem enrolação desnecessária",
-            "Resposta não responde a pergunta adequadamente"
-        ]
+        description="Clareza e objetividade da resposta"
     )
     
     @classmethod

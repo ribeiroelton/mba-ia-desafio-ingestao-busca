@@ -37,10 +37,15 @@ def test_factual_accuracy_direct_question(quality_test_collection, llm_evaluator
         system_prompt=SYSTEM_PROMPT
     )
     
-    # Assertions essenciais
-    assert evaluation.passed, f"Falhou: {evaluation.feedback}"
-    assert evaluation.criteria_scores["hallucination_detection"] >= 80
-    assert evaluation.criteria_scores["adherence_to_context"] >= 75
+    # Assertions fortalecidas
+    assert evaluation.passed, \
+        f"Falhou com score {evaluation.score}: {evaluation.feedback}"
+    assert evaluation.criteria_scores["hallucination_detection"] >= 80, \
+        f"Detecção de alucinação abaixo do esperado: {evaluation.criteria_scores['hallucination_detection']}"
+    assert evaluation.criteria_scores["adherence_to_context"] >= 75, \
+        f"Aderência ao contexto abaixo do esperado: {evaluation.criteria_scores['adherence_to_context']}"
+    assert 70 <= evaluation.score <= 100, \
+        f"Score fora do range esperado: {evaluation.score}"
 
 
 def test_no_context_standard_message(quality_test_collection, llm_evaluator):
@@ -62,8 +67,12 @@ def test_no_context_standard_message(quality_test_collection, llm_evaluator):
         system_prompt=SYSTEM_PROMPT
     )
     
-    assert evaluation.criteria_scores["rule_following"] >= 90
-    assert evaluation.overall_score >= 85
+    assert evaluation.criteria_scores["rule_following"] >= 90, \
+        f"Seguimento de regras abaixo do esperado: {evaluation.criteria_scores['rule_following']}"
+    assert evaluation.overall_score >= 85, \
+        f"Score geral abaixo do esperado: {evaluation.overall_score}"
+    assert 70 <= evaluation.score <= 100, \
+        f"Score fora do range esperado: {evaluation.score}"
 
 
 def test_partial_info_no_hallucination(quality_test_collection, llm_evaluator):
@@ -85,8 +94,12 @@ def test_partial_info_no_hallucination(quality_test_collection, llm_evaluator):
     )
     
     # Crítico: não deve inventar números de funcionários (campo não existe no doc)
-    assert evaluation.criteria_scores["hallucination_detection"] >= 80
-    assert evaluation.overall_score >= 65
+    assert evaluation.criteria_scores["hallucination_detection"] >= 80, \
+        f"Detecção de alucinação abaixo do esperado: {evaluation.criteria_scores['hallucination_detection']}"
+    assert evaluation.overall_score >= 65, \
+        f"Score geral abaixo do esperado: {evaluation.overall_score}"
+    assert 0 <= evaluation.score <= 100, \
+        f"Score fora do range válido: {evaluation.score}"
 
 
 def test_no_external_knowledge(quality_test_collection, llm_evaluator):
@@ -107,36 +120,11 @@ def test_no_external_knowledge(quality_test_collection, llm_evaluator):
     )
     
     # Deve usar contexto OU mensagem padrão, nunca conhecimento geral
-    assert evaluation.criteria_scores["adherence_to_context"] >= 80
-    assert evaluation.criteria_scores["rule_following"] >= 85
-
-
-def test_evaluation_cost_estimate(quality_test_collection, llm_evaluator):
-    """
-    Documenta custos de avaliação.
-    """
-    # Executar avaliação simples
-    searcher = SemanticSearch(collection_name=quality_test_collection)
-    question = "Teste de custo"
-    context = searcher.get_context(question)
-    response = ask_llm(question, context)
-    
-    evaluation = llm_evaluator.evaluate(
-        question=question,
-        context=context,
-        response=response,
-        system_prompt=SYSTEM_PROMPT
-    )
-    
-    print("\n" + "="*60)
-    print("CUSTOS DE AVALIAÇÃO")
-    print("="*60)
-    print(f"Modelo: gpt-5-nano")
-    print(f"Tokens por avaliação: ~600-900")
-    print(f"Custo por avaliação: ~$0.00006-0.00009")
-    print("="*60)
-    
-    assert True
-
+    assert evaluation.criteria_scores["adherence_to_context"] >= 80, \
+        f"Aderência ao contexto abaixo do esperado: {evaluation.criteria_scores['adherence_to_context']}"
+    assert evaluation.criteria_scores["rule_following"] >= 85, \
+        f"Seguimento de regras abaixo do esperado: {evaluation.criteria_scores['rule_following']}"
+    assert 70 <= evaluation.score <= 100, \
+        f"Score fora do range esperado: {evaluation.score}"
 
 
