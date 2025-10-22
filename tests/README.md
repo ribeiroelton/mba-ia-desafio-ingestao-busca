@@ -371,28 +371,6 @@ docker-compose ps
 - Aguarde alguns segundos e tente novamente
 - Considere reduzir paralelização: `pytest -n 1`
 
-### Testes Lentos
-```bash
-# Identificar testes lentos
-pytest --durations=10
-
-# Rodar apenas unitários (rápidos)
-pytest tests/unit/ -v
-
-# Skip testes de integração temporariamente
-pytest tests/unit/ -v
-```
-
-### Cobertura Baixa
-```bash
-# Ver linhas não cobertas
-pytest --cov=src --cov-report=term-missing
-
-# Identificar funções não testadas
-pytest --cov=src --cov-report=html
-open htmlcov/index.html
-```
-
 1. **Sempre**:
    - Docstring clara
    - Nome de teste descritivo
