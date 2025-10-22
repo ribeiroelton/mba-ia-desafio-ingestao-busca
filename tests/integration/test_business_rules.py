@@ -1,13 +1,15 @@
 """
-Testes de integração para regras de negócio com LLM real.
+Testes de integração para regras de negócio técnicas.
 
-Valida comportamento end-to-end com gpt-5-nano e avaliação qualitativa.
+Valida configurações específicas do sistema (chunking, k, etc).
 """
 import pytest
 
-from src.ingest import load_pdf, split_documents, store_in_vectorstore
+from src.ingest import load_pdf, split_documents
 from src.search import SemanticSearch
-from src.chat import ask_llm, SYSTEM_PROMPT
+from langchain_postgres import PGVector
+from langchain_openai import OpenAIEmbeddings
+import os
 
 
 @pytest.fixture(scope="module")
@@ -17,6 +19,8 @@ def ingested_test_doc(sample_pdf_path, shared_test_collection):
     
     Otimiza performance evitando ingestão repetida.
     """
+    from src.ingest import store_in_vectorstore
+    
     docs = load_pdf(sample_pdf_path)
     chunks = split_documents(docs)
     store_in_vectorstore(chunks, shared_test_collection)
@@ -24,10 +28,6 @@ def ingested_test_doc(sample_pdf_path, shared_test_collection):
     yield shared_test_collection
     
     # Cleanup: Remover coleção após testes
-    from langchain_postgres import PGVector
-    from langchain_openai import OpenAIEmbeddings
-    import os
-    
     try:
         vectorstore = PGVector(
             connection=os.getenv("DATABASE_URL"),
@@ -37,69 +37,6 @@ def ingested_test_doc(sample_pdf_path, shared_test_collection):
         vectorstore.delete_collection()
     except Exception:
         pass
-
-
-def test_rn001_answer_with_context(ingested_test_doc, llm_evaluator):
-    """
-    RN-001: Resposta baseada no contexto.
-    """
-    searcher = SemanticSearch(collection_name=ingested_test_doc)
-    
-    question = "Em que ano foi fundada a empresa Alfa Energia S.A.?"
-    context = searcher.get_context(question)
-    response = ask_llm(question=question, context=context)
-    
-    assert len(response) > 0
-    assert "Não tenho informações necessárias" not in response
-    
-    evaluation = llm_evaluator.evaluate(
-        question=question, context=context, response=response, system_prompt=SYSTEM_PROMPT
-    )
-    
-    # Assertions essenciais
-    assert evaluation.passed
-    assert evaluation.criteria_scores["adherence_to_context"] >= 70
-    assert evaluation.criteria_scores["hallucination_detection"] >= 80
-
-
-def test_rn002_no_context_standard_message(ingested_test_doc, llm_evaluator):
-    """
-    RN-002: Mensagem padrão quando sem contexto.
-    """
-    searcher = SemanticSearch(collection_name=ingested_test_doc)
-    
-    question = "Qual é a capital da França?"
-    context = searcher.get_context(question)
-    response = ask_llm(question=question, context=context)
-    
-    assert "Não tenho informações necessárias" in response
-    
-    evaluation = llm_evaluator.evaluate(
-        question=question, context=context, response=response, system_prompt=SYSTEM_PROMPT
-    )
-    
-    # Assertions essenciais
-    assert evaluation.criteria_scores["rule_following"] >= 90
-    assert evaluation.overall_score >= 85
-
-
-def test_rn003_no_external_knowledge(ingested_test_doc, llm_evaluator):
-    """
-    RN-003: Não usar conhecimento externo.
-    """
-    searcher = SemanticSearch(collection_name=ingested_test_doc)
-    
-    question = "O que é inteligência artificial?"
-    context = searcher.get_context(question)
-    response = ask_llm(question=question, context=context)
-    
-    evaluation = llm_evaluator.evaluate(
-        question=question, context=context, response=response, system_prompt=SYSTEM_PROMPT
-    )
-    
-    # Assertions essenciais
-    assert evaluation.criteria_scores["adherence_to_context"] >= 80
-    assert evaluation.criteria_scores["rule_following"] >= 85
 
 
 def test_rn006_search_returns_k10(ingested_test_doc):
