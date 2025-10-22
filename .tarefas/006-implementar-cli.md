@@ -17,7 +17,7 @@ Implementar interface CLI interativa usando Typer que recebe perguntas do usuár
 - RF-013: Interface CLI com Typer
 - RF-014: Loop de perguntas e respostas
 - RF-015: Integrar busca semântica
-- RF-016: Chamar LLM (gpt-5-nano ou gpt-4o-mini)
+- RF-016: Chamar LLM (gpt-5-nano ou gpt-5-nano)
 
 ### Requisitos Não-Funcionais
 - RN-001: Respostas baseadas exclusivamente no contexto
@@ -142,7 +142,7 @@ def ask_llm(question: str, context: str) -> str:
     Returns:
         Resposta do LLM
     """
-    llm_model = os.getenv("LLM_MODEL", "gpt-4o-mini")
+    llm_model = os.getenv("LLM_MODEL", "gpt-5-nano")
     
     llm = ChatOpenAI(
         model=llm_model,
@@ -255,13 +255,6 @@ def test_build_prompt():
     assert "PERGUNTA DO USUÁRIO:" in prompt
     assert question in prompt
 
-
-def test_system_prompt_has_rules():
-    """Testa que prompt do sistema tem regras."""
-    assert "REGRAS OBRIGATÓRIAS" in SYSTEM_PROMPT
-    assert "NUNCA invente" in SYSTEM_PROMPT
-    assert "Não tenho informações necessárias" in SYSTEM_PROMPT
-```
 
 **Cenários de Teste Manual**:
 

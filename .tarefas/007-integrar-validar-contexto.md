@@ -417,7 +417,7 @@ chmod +x scripts/validate_integration.sh
    ├─ Solicita pergunta do usuário
    ├─ Busca contexto via search.py
    ├─ Monta prompt com SYSTEM_PROMPT + contexto + pergunta
-   ├─ Envia ao LLM (gpt-5-nano ou gpt-4o-mini)
+   ├─ Envia ao LLM (gpt-5-nano ou gpt-5-nano)
    └─ Exibe resposta (ou mensagem padrão se fora do contexto)
 ```
 

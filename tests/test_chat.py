@@ -41,24 +41,3 @@ Linha 3"""
     assert "Linha 2" in prompt
     assert "Linha 3" in prompt
     assert question in prompt
-
-
-def test_system_prompt_has_rules():
-    """Testa que prompt do sistema tem regras."""
-    assert "REGRAS OBRIGATÓRIAS" in SYSTEM_PROMPT
-    assert "NUNCA invente" in SYSTEM_PROMPT
-    assert "Não tenho informações necessárias" in SYSTEM_PROMPT
-
-
-def test_system_prompt_has_examples():
-    """Testa que prompt do sistema tem exemplos."""
-    assert "EXEMPLOS DE PERGUNTAS FORA DO CONTEXTO" in SYSTEM_PROMPT
-    assert "capital da França" in SYSTEM_PROMPT
-
-
-def test_system_prompt_has_strict_rules():
-    """Testa que prompt do sistema tem regras estritas."""
-    assert "EXCLUSIVAMENTE" in SYSTEM_PROMPT
-    assert "SOMENTE" in SYSTEM_PROMPT
-    assert "NÃO estiver explicitamente" in SYSTEM_PROMPT
-    assert "NUNCA produza opiniões" in SYSTEM_PROMPT

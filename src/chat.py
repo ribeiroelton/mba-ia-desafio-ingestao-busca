@@ -73,7 +73,7 @@ def ask_llm(question: str, context: str) -> str:
     Returns:
         Resposta do LLM
     """
-    llm_model = os.getenv("LLM_MODEL", "gpt-5-mini")
+    llm_model = os.getenv("LLM_MODEL", "gpt-5-nano")
     
     llm = ChatOpenAI(
         model=llm_model,
