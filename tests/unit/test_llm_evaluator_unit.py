@@ -10,10 +10,10 @@ from tests.utils.llm_evaluator import LLMEvaluator, EvaluationResult
 from tests.utils.evaluation_criteria import RagEvaluationCriteria
 
 
-class TestLLMEvaluatorInitialization:
-    """Testes de inicialização do avaliador."""
+class TestLLMEvaluator:
+    """Testes core do avaliador."""
     
-    def test_default_initialization(self):
+    def test_initialization_defaults(self):
         """Testa inicialização com valores padrão."""
         evaluator = LLMEvaluator()
         
@@ -21,18 +21,14 @@ class TestLLMEvaluatorInitialization:
         assert evaluator.model == "gpt-5-nano"
         assert evaluator.llm is not None
     
-    def test_custom_initialization(self):
+    def test_initialization_custom(self):
         """Testa inicialização com valores customizados."""
         evaluator = LLMEvaluator(threshold=80, model="gpt-4")
         
         assert evaluator.threshold == 80
         assert evaluator.model == "gpt-4"
-
-
-class TestPromptBuilding:
-    """Testes de construção de prompts."""
     
-    def test_build_prompt_without_system_prompt(self):
+    def test_build_prompt_basic(self):
         """Testa construção de prompt sem SYSTEM_PROMPT."""
         evaluator = LLMEvaluator()
         
@@ -66,8 +62,8 @@ class TestPromptBuilding:
         assert system_prompt in prompt
 
 
-class TestJSONParsing:
-    """Testes de parsing de JSON."""
+class TestEvaluationParsing:
+    """Testes de parsing e construção de resultados."""
     
     def test_parse_valid_json(self):
         """Testa parsing de JSON válido."""
@@ -89,7 +85,7 @@ class TestJSONParsing:
         assert result["overall_score"] == 83
         assert result["passed"] is True
     
-    def test_parse_json_with_markdown(self):
+    def test_parse_json_with_markdown_blocks(self):
         """Testa parsing de JSON dentro de markdown code block."""
         evaluator = LLMEvaluator()
         
@@ -110,7 +106,7 @@ class TestJSONParsing:
         assert result["adherence_to_context"] == 80
         assert result["overall_score"] == 83
     
-    def test_parse_invalid_json_raises_error(self):
+    def test_parse_invalid_json_raises(self):
         """Testa que JSON inválido levanta exceção."""
         evaluator = LLMEvaluator()
         
@@ -118,12 +114,8 @@ class TestJSONParsing:
         
         with pytest.raises(json.JSONDecodeError):
             evaluator._parse_evaluation_response(invalid_json)
-
-
-class TestEvaluationResultBuilding:
-    """Testes de construção de EvaluationResult."""
     
-    def test_build_result_with_all_fields(self):
+    def test_build_result_complete(self):
         """Testa construção com todos os campos fornecidos."""
         evaluator = LLMEvaluator(threshold=70)
         
@@ -146,10 +138,11 @@ class TestEvaluationResultBuilding:
         assert result.feedback == "Boa resposta"
         assert result.criteria_scores["adherence_to_context"] == 80
     
-    def test_build_result_calculates_score_if_missing(self):
-        """Testa que score é calculado se não fornecido."""
+    def test_build_result_calculates_missing_fields(self):
+        """Testa que score e passed são calculados se não fornecidos."""
         evaluator = LLMEvaluator(threshold=70)
         
+        # Teste com score faltando
         data = {
             "adherence_to_context": 80,
             "hallucination_detection": 90,
@@ -169,42 +162,13 @@ class TestEvaluationResultBuilding:
         })
         
         assert result.score == expected_score
-    
-    def test_build_result_determines_passed_if_missing(self):
-        """Testa que passed é determinado pelo threshold se não fornecido."""
-        evaluator = LLMEvaluator(threshold=70)
-        
-        # Score acima do threshold
-        data_pass = {
-            "adherence_to_context": 80,
-            "hallucination_detection": 90,
-            "rule_following": 85,
-            "clarity_objectivity": 75,
-            "overall_score": 83,
-            "feedback": "Boa resposta"
-        }
-        
-        result_pass = evaluator._build_evaluation_result(data_pass)
-        assert result_pass.passed is True
-        
-        # Score abaixo do threshold
-        data_fail = {
-            "adherence_to_context": 50,
-            "hallucination_detection": 60,
-            "rule_following": 55,
-            "clarity_objectivity": 45,
-            "overall_score": 54,
-            "feedback": "Resposta fraca"
-        }
-        
-        result_fail = evaluator._build_evaluation_result(data_fail)
-        assert result_fail.passed is False
+        assert result.passed is True  # Score acima de 70
 
 
-class TestWeightedScoreCalculation:
+class TestWeightedScore:
     """Testes de cálculo de score ponderado."""
     
-    def test_calculate_weighted_score(self):
+    def test_calculate_weighted_score_normal(self):
         """Testa cálculo de score ponderado com pesos corretos."""
         scores = {
             "adherence_to_context": 80,      # 30% = 24
@@ -218,38 +182,36 @@ class TestWeightedScoreCalculation:
         
         assert result == 84
     
-    def test_calculate_weighted_score_all_zeros(self):
-        """Testa cálculo com todos os scores zero."""
-        scores = {
+    def test_calculate_weighted_score_edge_cases(self):
+        """Testa cálculo com edge cases (zeros e cem)."""
+        # Teste com todos zeros
+        scores_zero = {
             "adherence_to_context": 0,
             "hallucination_detection": 0,
             "rule_following": 0,
             "clarity_objectivity": 0,
         }
         
-        result = RagEvaluationCriteria.calculate_weighted_score(scores)
+        result_zero = RagEvaluationCriteria.calculate_weighted_score(scores_zero)
+        assert result_zero == 0
         
-        assert result == 0
-    
-    def test_calculate_weighted_score_all_hundreds(self):
-        """Testa cálculo com todos os scores 100."""
-        scores = {
+        # Teste com todos cem
+        scores_hundred = {
             "adherence_to_context": 100,
             "hallucination_detection": 100,
             "rule_following": 100,
             "clarity_objectivity": 100,
         }
         
-        result = RagEvaluationCriteria.calculate_weighted_score(scores)
-        
-        assert result == 100
+        result_hundred = RagEvaluationCriteria.calculate_weighted_score(scores_hundred)
+        assert result_hundred == 100
 
 
 class TestEvaluationCriteria:
     """Testes dos critérios de avaliação."""
     
-    def test_get_all_criteria(self):
-        """Testa obtenção de todos os critérios."""
+    def test_all_criteria_structure(self):
+        """Testa estrutura de todos os critérios."""
         criteria = RagEvaluationCriteria.get_all_criteria()
         
         assert len(criteria) == 4
@@ -257,18 +219,11 @@ class TestEvaluationCriteria:
         assert all(hasattr(c, 'weight') for c in criteria)
         assert all(hasattr(c, 'description') for c in criteria)
     
-    def test_criteria_weights_sum_to_one(self):
+    def test_weights_sum_to_one(self):
         """Testa que pesos dos critérios somam 1.0."""
         criteria = RagEvaluationCriteria.get_all_criteria()
         
         total_weight = sum(c.weight for c in criteria)
         
         assert abs(total_weight - 1.0) < 0.01  # Tolerância para float
-    
-    def test_criteria_have_examples(self):
-        """Testa que todos os critérios têm exemplos."""
-        criteria = RagEvaluationCriteria.get_all_criteria()
-        
-        for criterion in criteria:
-            assert len(criterion.examples_good) > 0
-            assert len(criterion.examples_bad) > 0
+

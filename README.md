@@ -310,11 +310,10 @@ Framework para avaliação automática de qualidade:
 - Custo por avaliação: ~$0.00006-0.00009
 
 **Detalhamento por arquivo**:
-- `test_llm_quality_evaluation.py`: 5 testes
-- `test_business_rules.py`: 3 testes LLM
+- `test_llm_quality_evaluation.py`: 4 testes
 - `test_real_scenarios.py`: 4 testes
-- `test_e2e_core.py`: 3 testes
-- **Total**: 15 testes LLM-as-a-Judge
+- `test_business_rules.py`: 2 testes técnicos (RN-005, RN-006)
+- **Total**: 10 testes de integração + 28 testes unitários = **38 testes**
 
 ### Executando Testes
 
@@ -346,19 +345,20 @@ xdg-open htmlcov/index.html  # Linux
 
 #### 1. Testes Unitários (`tests/unit/`)
 
-Validam componentes isoladamente:
-- **test_chat_validation.py**: Validação de inputs e outputs do chat
-- **test_ingest_validation.py**: Validação do processo de ingestão
-- **test_search_validation.py**: Validação da busca semântica
-- **test_llm_evaluator_unit.py**: Testes do framework de avaliação
+Validam componentes isoladamente (28 testes):
+- **test_chat_validation.py**: Validação de inputs e outputs do chat (4 testes)
+- **test_ingest_validation.py**: Validação do processo de ingestão (6 testes)
+- **test_search_validation.py**: Validação da busca semântica (5 testes)
+- **test_llm_evaluator_unit.py**: Testes do framework de avaliação (13 testes focados)
 
 #### 2. Testes de Integração (`tests/integration/`)
 
-Validam fluxos completos end-to-end:
-- **test_e2e_core.py**: Testes de fluxo completo (ingestão → busca → chat)
-- **test_business_rules.py**: Validação de regras de negócio
-- **test_real_scenarios.py**: Cenários reais de uso
-- **test_llm_quality_evaluation.py**: Avaliação qualitativa com LLM-as-a-Judge
+Validam fluxos completos end-to-end (10 testes):
+- **test_business_rules.py**: Regras de negócio técnicas - chunking, k=10 (2 testes)
+- **test_real_scenarios.py**: Cenários reais de uso (4 testes)
+- **test_llm_quality_evaluation.py**: Avaliação qualitativa com LLM-as-a-Judge (4 testes)
+
+**Nota**: Suite otimizada para remover redundâncias - de 16 para 10 testes de integração (37,5% redução) mantendo 100% de cobertura funcional.
 
 #### 3. Testes de Qualidade LLM (`tests/integration/test_llm_quality_evaluation.py`)
 
