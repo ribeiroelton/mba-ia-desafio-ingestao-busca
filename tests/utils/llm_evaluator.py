@@ -242,8 +242,24 @@ IMPORTANTE:
         
         text = text.strip()
         
-        # Parsear JSON (strict=False permite control characters)
-        return json.loads(text, strict=False)
+        # Tentar parsear JSON normalmente primeiro
+        try:
+            return json.loads(text, strict=False)
+        except json.JSONDecodeError:
+            # Se falhar, tentar corrigir problemas comuns com feedback
+            # Escapar aspas dentro do campo feedback
+            import re
+            # Encontrar o campo feedback e escapar aspas dentro dele
+            pattern = r'"feedback":\s*"([^"]*(?:"[^"]*)*)"'
+            
+            def escape_feedback(match):
+                feedback_content = match.group(1)
+                # Escapar apenas aspas que não são de fechamento do JSON
+                escaped = feedback_content.replace('\n', ' ').replace('\r', '')
+                return f'"feedback": "{escaped}"'
+            
+            text_fixed = re.sub(pattern, escape_feedback, text, flags=re.DOTALL)
+            return json.loads(text_fixed, strict=False)
     
     def _build_evaluation_result(self, data: Dict) -> EvaluationResult:
         """
