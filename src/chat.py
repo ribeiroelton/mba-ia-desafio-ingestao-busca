@@ -7,6 +7,10 @@ baseadas no conteúdo dos documentos ingeridos.
 
 import os
 import sys
+from pathlib import Path
+
+# Adicionar diretório pai ao path para imports funcionarem
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import typer
 from dotenv import load_dotenv
@@ -101,6 +105,7 @@ def main(
     
     Exemplo:
         python src/chat.py
+        python src/chat.py --collection custom_docs
     """
     typer.echo("🤖 Sistema de Busca Semântica")
     typer.echo("=" * 50)
