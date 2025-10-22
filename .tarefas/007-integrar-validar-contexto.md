@@ -54,6 +54,12 @@ Integrar ingest.py, search.py e chat.py em fluxo end-to-end. Validar rigorosamen
 8. [x] Chunk size 1000/150 validado
 9. [x] Cosine distance validado
 10. [x] Documentação de integração
+5. [x] Cenário CT-003 validado (informação parcial)
+6. [x] Resposta padrão funciona corretamente
+7. [x] K=10 fixo validado
+8. [x] Chunk size 1000/150 validado
+9. [x] Cosine distance validado
+10. [x] Documentação de integração
 
 ## Implementação Resumida
 
