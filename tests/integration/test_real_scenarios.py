@@ -1,13 +1,13 @@
 """
 Testes de cenários reais com gpt-5-nano.
 
-Valida casos de uso práticos e edge cases.
+Valida casos de uso práticos e edge cases com avaliação LLM qualitativa.
 """
 import pytest
 
 from src.ingest import load_pdf, split_documents, store_in_vectorstore
 from src.search import SemanticSearch
-from src.chat import ask_llm
+from src.chat import ask_llm, SYSTEM_PROMPT
 
 
 @pytest.fixture(scope="module")
@@ -37,31 +37,51 @@ def real_scenario_collection(sample_pdf_path, shared_test_collection):
         pass
 
 
-def test_scenario_ambiguous_question(real_scenario_collection):
+def test_scenario_ambiguous_question_with_evaluation(
+    real_scenario_collection,
+    llm_evaluator
+):
     """
-    Cenário: Pergunta ambígua que requer interpretação.
+    Cenário: Pergunta ambígua com AVALIAÇÃO LLM.
     
-    Expected: LLM real interpreta contexto e responde adequadamente
-    ou informa que precisa de mais clareza.
+    Valida que LLM interpreta adequadamente ou admite necessidade de clareza.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # Pergunta ambígua
     question = "Me fale sobre isso"
     context = searcher.get_context(question)
-    
     response = ask_llm(question, context)
     
-    # LLM deve responder algo (baseado no contexto ou admitir ambiguidade)
-    assert len(response) > 0, "Resposta não pode ser vazia"
-    assert isinstance(response, str), "Resposta deve ser string"
-
-
-def test_scenario_llm_follows_system_prompt(real_scenario_collection):
-    """
-    Cenário: Validar que LLM segue SYSTEM_PROMPT rigorosamente.
+    # Validação estrutural
+    assert len(response) > 0
+    assert isinstance(response, str)
     
-    Query sobre algo claramente fora do contexto deve retornar mensagem padrão.
+    # Avaliação qualitativa
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Para pergunta ambígua, esperamos:
+    # - Alta aderência ao contexto
+    # - Clareza pode ser menor (pergunta é ambígua)
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70, \
+        f"Mesmo com pergunta ambígua, deve aderir ao contexto"
+    
+    # Score geral pode ser mais baixo (clareza prejudicada)
+    # mas não deve alucinar
+    assert evaluation.criteria_scores["hallucination_detection"] >= 80, \
+        f"Não deve alucinar mesmo com pergunta ambígua"
+
+
+def test_scenario_llm_follows_system_prompt_with_evaluation(
+    real_scenario_collection, 
+    llm_evaluator
+):
+    """
+    Cenário: Validar que LLM segue SYSTEM_PROMPT rigorosamente com AVALIAÇÃO LLM.
     
     Este teste é crítico para validar RN-002 e RN-003.
     """
@@ -78,44 +98,79 @@ def test_scenario_llm_follows_system_prompt(real_scenario_collection):
         context = searcher.get_context(question)
         response = ask_llm(question, context)
         
-        # LLM DEVE seguir SYSTEM_PROMPT
+        # Validação estrutural
         assert "Não tenho informações necessárias" in response, \
             f"LLM não seguiu SYSTEM_PROMPT para: {question}"
+        
+        # Avaliação qualitativa
+        evaluation = llm_evaluator.evaluate(
+            question=question,
+            context=context,
+            response=response,
+            system_prompt=SYSTEM_PROMPT
+        )
+        
+        # Para perguntas fora do contexto com mensagem padrão correta:
+        assert evaluation.criteria_scores["rule_following"] >= 90, \
+            f"Deve seguir SYSTEM_PROMPT perfeitamente para: {question}"
+        
+        assert evaluation.criteria_scores["hallucination_detection"] >= 95, \
+            f"Não deve alucinar para: {question}"
+        
+        assert evaluation.overall_score >= 85, \
+            f"Mensagem padrão correta deve ter score alto para: {question}\n{evaluation.feedback}"
 
 
-def test_scenario_context_length_handling(real_scenario_collection):
+def test_scenario_context_length_handling_with_evaluation(
+    real_scenario_collection,
+    llm_evaluator
+):
     """
-    Cenário: Query que retorna múltiplos chunks (até k=10).
+    Cenário: Query que retorna múltiplos chunks com AVALIAÇÃO LLM.
     
-    Expected: LLM processa contexto completo e responde adequadamente.
-    
-    Valida capacidade de processar contexto extenso.
+    Valida capacidade de processar contexto extenso com qualidade.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # Query genérica que deve retornar múltiplos chunks
     question = "Faça um resumo completo do conteúdo"
     context = searcher.get_context(question)
     
-    # Contexto deve conter múltiplos chunks
-    assert len(context) > 100, "Contexto deve ser substancial"
+    # Contexto deve ser substancial
+    assert len(context) > 100
     
     response = ask_llm(question, context)
     
-    # LLM deve processar e resumir
-    assert len(response) > 50, "Resumo deve ser substantivo"
-    assert isinstance(response, str), "Resposta deve ser string"
-    # Não deve ser mensagem padrão (há contexto disponível)
+    # Validação estrutural
+    assert len(response) > 50
     assert "Não tenho informações necessárias" not in response
+    
+    # Avaliação qualitativa
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Para resumo de contexto extenso:
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70, \
+        "Resumo deve aderir ao contexto mesmo sendo extenso"
+    
+    assert evaluation.criteria_scores["clarity_objectivity"] >= 70, \
+        "Resumo deve ser razoavelmente claro"
+    
+    assert evaluation.overall_score >= 70, \
+        f"Resumo de contexto extenso deve passar threshold\n{evaluation.feedback}"
 
 
-def test_scenario_similar_questions_consistency(real_scenario_collection):
+def test_scenario_similar_questions_consistency_with_evaluation(
+    real_scenario_collection,
+    llm_evaluator
+):
     """
-    Cenário: Perguntas similares devem gerar respostas consistentes.
+    Cenário: Perguntas similares com AVALIAÇÃO LLM.
     
-    Expected: Mesma informação em respostas para perguntas equivalentes.
-    
-    Nota: LLMs podem variar levemente, mas tema deve ser consistente.
+    Expected: Respostas consistentes em qualidade para perguntas equivalentes.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
@@ -126,42 +181,71 @@ def test_scenario_similar_questions_consistency(real_scenario_collection):
         "Qual é o tema central?",
     ]
     
-    responses = []
+    evaluations = []
     for question in questions:
         context = searcher.get_context(question)
         response = ask_llm(question, context)
-        responses.append(response)
+        
+        # Validação estrutural
+        assert isinstance(response, str)
+        assert len(response) > 0
+        
+        # Avaliação qualitativa
+        evaluation = llm_evaluator.evaluate(
+            question=question,
+            context=context,
+            response=response,
+            system_prompt=SYSTEM_PROMPT
+        )
+        evaluations.append(evaluation)
     
-    # Todas devem ser strings não vazias
-    for response in responses:
-        assert isinstance(response, str), "Resposta deve ser string"
-        assert len(response) > 0, "Resposta não pode ser vazia"
+    # Todas devem passar
+    for i, evaluation in enumerate(evaluations):
+        assert evaluation.passed, \
+            f"Pergunta {i+1} falhou: {evaluation.feedback}"
     
-    # Pelo menos não devem ser todas mensagens padrão
-    # (assumindo que documento tem conteúdo relevante)
-    standard_msg_count = sum(
-        1 for r in responses if "Não tenho informações necessárias" in r
-    )
-    assert standard_msg_count < len(responses), \
-        "Nem todas as perguntas similares devem falhar"
+    # Scores devem ser consistentes (variação < 20 pontos)
+    scores = [e.overall_score for e in evaluations]
+    score_variance = max(scores) - min(scores)
+    
+    assert score_variance < 20, \
+        f"Scores muito inconsistentes entre perguntas similares: {scores}"
 
 
-def test_scenario_numeric_data_handling(real_scenario_collection):
+def test_scenario_numeric_data_handling_with_evaluation(
+    real_scenario_collection,
+    llm_evaluator
+):
     """
-    Cenário: Pergunta sobre dados numéricos no documento.
+    Cenário: Pergunta sobre dados numéricos com AVALIAÇÃO LLM.
     
-    Expected: LLM extrai e reporta números corretamente.
-    
-    Valida precisão na extração de informações quantitativas.
+    Expected: LLM extrai e reporta números corretamente, baseado no contexto.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # Query sobre possíveis dados numéricos
     question = "Há números ou valores mencionados?"
     context = searcher.get_context(question)
-    
     response = ask_llm(question, context)
     
-    # Resposta deve ser válida
-    assert isinstance(response, str), "Resposta deve ser string"
-    assert len(response) > 0, "Resposta não pode ser vazia"
+    # Validação estrutural
+    assert isinstance(response, str)
+    assert len(response) > 0
+    
+    # Avaliação qualitativa
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    # Para extração de dados numéricos:
+    assert evaluation.criteria_scores["adherence_to_context"] >= 75, \
+        "Deve extrair números apenas do contexto"
+    
+    assert evaluation.criteria_scores["hallucination_detection"] >= 80, \
+        "Não deve inventar números não presentes"
+    
+    assert evaluation.overall_score >= 70, \
+        f"Extração de dados deve passar threshold\n{evaluation.feedback}"
+

@@ -3,9 +3,10 @@
 ![Python](https://img.shields.io/badge/python-3.13.9-blue)
 ![LangChain](https://img.shields.io/badge/langchain-0.3.27-green)
 ![PostgreSQL](https://img.shields.io/badge/postgresql-17-blue)
+![Coverage](https://img.shields.io/badge/coverage-80%25+-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
-Sistema de Retrieval Augmented Generation (RAG) para ingestão de documentos PDF e consultas semânticas usando LangChain, OpenAI e PostgreSQL com pgVector.
+Sistema de Retrieval Augmented Generation (RAG) para ingestão de documentos PDF e consultas semânticas usando LangChain, OpenAI e PostgreSQL com pgVector. Inclui framework avançado de testes com **LLM-as-a-Judge** para garantir qualidade das respostas.
 
 ## 📋 Índice
 
@@ -19,6 +20,9 @@ Sistema de Retrieval Augmented Generation (RAG) para ingestão de documentos PDF
   - [Chat Interativo](#chat-interativo)
 - [Casos de Teste](#-casos-de-teste)
 - [Testes](#-testes)
+  - [Framework LLM-as-a-Judge](#framework-llm-as-a-judge)
+  - [Executando Testes](#executando-testes)
+  - [Cobertura de Código](#cobertura-de-código)
 - [Troubleshooting](#-troubleshooting)
 - [Estrutura do Projeto](#-estrutura-do-projeto)
 - [Regras de Negócio](#-regras-de-negócio)
@@ -27,11 +31,12 @@ Sistema de Retrieval Augmented Generation (RAG) para ingestão de documentos PDF
 
 ## 🎯 Visão Geral
 
-Este sistema implementa um pipeline completo de RAG:
+Este sistema implementa um pipeline completo de RAG com foco em **qualidade e confiabilidade**:
 
 1. **Ingestão**: Processa PDFs, divide em chunks e armazena embeddings no PostgreSQL
 2. **Busca Semântica**: Encontra os 10 trechos mais relevantes por similaridade
 3. **Chat**: Interface CLI que responde perguntas baseado EXCLUSIVAMENTE no contexto recuperado
+4. **Avaliação de Qualidade**: Framework LLM-as-a-Judge para validar respostas automaticamente
 
 ### Principais Características
 
@@ -40,7 +45,9 @@ Este sistema implementa um pipeline completo de RAG:
 - ✅ Chunking inteligente (1000 chars, overlap 150)
 - ✅ Busca por similaridade de cosseno (top k=10)
 - ✅ Interface CLI intuitiva
+- ✅ **Framework LLM-as-a-Judge** para avaliação automática de qualidade
 - ✅ Testes automatizados com cobertura >= 80%
+- ✅ Testes de integração com avaliação qualitativa de respostas
 
 ## 🏗️ Arquitetura
 
@@ -61,6 +68,12 @@ Este sistema implementa um pipeline completo de RAG:
                                             │ OpenAI LLM  │
                                             │ (Resposta)  │
                                             └─────────────┘
+                                                    │
+                                                    ▼
+                                            ┌─────────────┐
+                                            │ LLM Judge   │
+                                            │ (Avaliação) │
+                                            └─────────────┘
 ```
 
 ### Componentes
@@ -70,6 +83,7 @@ Este sistema implementa um pipeline completo de RAG:
 - **chat.py**: Interface CLI para perguntas e respostas
 - **PostgreSQL + pgVector**: Armazenamento de embeddings
 - **OpenAI**: Embeddings (text-embedding-3-small) e LLM (gpt-5-nano)
+- **LLM-as-a-Judge**: Framework de avaliação automática de qualidade
 
 ## 🚀 Funcionalidades
 
@@ -89,18 +103,25 @@ Este sistema implementa um pipeline completo de RAG:
 - Mensagem padrão quando informação não disponível:
   > "Não tenho informações necessárias para responder sua pergunta."
 
+### UC-004: Avaliação de Qualidade (LLM-as-a-Judge)
+- Avaliação automática de respostas usando segundo LLM
+- Validação de aderência ao contexto
+- Detecção de alucinações
+- Verificação de seguimento de regras
+- Análise de clareza e objetividade
+
 ## 📦 Pré-requisitos
 
 - **Python**: 3.13.9
 - **Docker**: Para PostgreSQL
-- **OpenAI API Key**: Para embeddings e LLM
+- **OpenAI API Key**: Para embeddings, LLM e avaliações
 
 ## 🔧 Instalação
 
 ### 1. Clone o Repositório
 
 ```bash
-git clone https://github.com/ribeiroelton/mba-ia-desafio-ingestao-busca.git
+git clone <repository-url>
 cd mba-ia-desafio-ingestao-busca
 ```
 
@@ -133,7 +154,7 @@ Crie arquivo `.env` na raiz:
 
 ```bash
 # PostgreSQL
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/rag
+CONNECTION_STRING=postgresql+psycopg://postgres:postgres@localhost:5432/rag
 
 # OpenAI
 OPENAI_API_KEY=sk-your-key-here
@@ -151,21 +172,21 @@ Ingira um ou mais documentos PDF:
 
 ```bash
 # Ingerir um PDF
-python src/ingest.py relatorio_financeiro.pdf
+python src/ingest.py documento.pdf
 
 # Com coleção customizada
 python src/ingest.py documento.pdf --collection minha_colecao
+
+# Exemplo real
+python src/ingest.py relatorio_financeiro.pdf
 ```
 
 **Saída esperada**:
 ```
-📄 Carregando PDF: relatorio_financeiro.pdf
-✓ 15 páginas carregadas
-✂️  Dividindo em chunks (size=1000, overlap=150)
-✓ 45 chunks criados
-💾 Armazenando embeddings no PGVector...
-✓ Embeddings armazenados com sucesso
-✅ Ingestão concluída!
+📄 Processando: relatorio_financeiro.pdf
+✅ 15 chunks criados
+💾 Armazenando embeddings no banco...
+✅ Ingestão concluída com sucesso!
 ```
 
 ### Chat Interativo
@@ -218,94 +239,166 @@ Não tenho informações necessárias para responder sua pergunta.
 **Cenário**: Documento contém "Faturamento foi 10 milhões"  
 **Pergunta**: "Qual foi o faturamento?"  
 **Resposta Esperada**: Informação correta do documento  
+**Validação**: LLM-as-a-Judge com score >= 70
 
 ### CT-002: Pergunta sem Contexto ✅
 
 **Cenário**: Documento sobre empresa, pergunta sobre capital de país  
 **Pergunta**: "Qual é a capital da França?"  
-**Resposta Esperada**: "Não tenho informações necessárias para responder sua pergunta."
+**Resposta Esperada**: "Não tenho informações necessárias para responder sua pergunta."  
+**Validação**: Score de rule_following >= 90
 
 ### CT-003: Informação Parcial ✅
 
 **Cenário**: Documento tem informação limitada  
 **Pergunta**: Requer informação não disponível  
-**Resposta Esperada**: Resposta com informação disponível ou admissão de limitação
+**Resposta Esperada**: Resposta com informação disponível ou admissão de limitação  
+**Validação**: Sem alucinações (hallucination_detection >= 80)
 
 ## 🧪 Testes
 
-### Suite Otimizada
+### Framework LLM-as-a-Judge
 
-Nossa suite de testes foi otimizada para:
-- **Foco em Integração**: 70% testes E2E com LLM real
-- **Validação Real**: Usa gpt-5-nano para validar comportamento autêntico
-- **Performance**: Execução em ~45-55 segundos (redução de 35%)
-- **Custo Controlado**: ~$0.02-0.05 por execução completa
+Este projeto implementa um **framework avançado de avaliação** usando o padrão **LLM-as-a-Judge**, onde um segundo LLM avalia objetivamente a qualidade das respostas do sistema principal.
 
-### Estrutura
+#### Critérios de Avaliação
 
+O framework avalia cada resposta em **4 dimensões**:
+
+| Critério | Peso | Descrição |
+|----------|------|-----------|
+| **Aderência ao Contexto** | 30% | Resposta baseada exclusivamente no contexto fornecido |
+| **Detecção de Alucinação** | 30% | Ausência de informações inventadas ou inferidas |
+| **Seguimento de Regras** | 25% | Aderência rigorosa ao SYSTEM_PROMPT |
+| **Clareza e Objetividade** | 15% | Resposta clara, direta e completa |
+
+#### Estrutura de Avaliação
+
+```python
+# Exemplo de uso do framework
+from tests.utils.llm_evaluator import LLMEvaluator
+
+evaluator = LLMEvaluator(threshold=70)
+result = evaluator.evaluate(
+    question="Qual o faturamento?",
+    context="Faturamento de R$10M",
+    response="O faturamento é de R$10M",
+    system_prompt=SYSTEM_PROMPT
+)
+
+print(f"Score Geral: {result.overall_score}")
+print(f"Passou: {result.passed}")
+print(f"Feedback: {result.feedback}")
 ```
-tests/
-├── unit/                    # Testes unitários críticos (10 testes)
-│   ├── test_ingest_validation.py
-│   ├── test_search_validation.py
-│   └── test_chat_validation.py
-└── integration/             # Testes E2E (18 testes)
-    ├── test_business_rules.py    # RN-001 a RN-006
-    ├── test_e2e_core.py          # Fluxos principais
-    └── test_real_scenarios.py     # Cenários reais
-```
 
-### Executar Testes
+#### Resultado da Avaliação
+
+Cada avaliação retorna um `EvaluationResult` com:
+
+- **score**: Score geral (0-100)
+- **criteria_scores**: Scores individuais por critério
+- **feedback**: Análise detalhada em português
+- **passed**: Boolean indicando se passou no threshold
+- **details**: Detalhes adicionais por critério
+
+### Executando Testes
 
 ```bash
-# Todos os testes (unitários + integração)
+# Suite completa
 pytest
 
-# Somente unitários (rápido, sem custo, < 5s)
+# Somente testes unitários
 pytest tests/unit/ -v
 
-# Somente integração (validação completa, ~40-50s)
+# Somente testes de integração
 pytest tests/integration/ -v
 
-# Com cobertura
-pytest --cov=src --cov-report=html
-open htmlcov/index.html
+# Testes de avaliação LLM
+pytest tests/integration/test_llm_quality_evaluation.py -v
 
-# Com duração dos testes
-pytest --durations=10
+# Testes unitários do framework LLM-as-a-Judge
+pytest tests/unit/test_llm_evaluator_unit.py -v
+
+# Com cobertura detalhada
+pytest --cov=src --cov-report=html --cov-report=term-missing
+
+# Abrir relatório HTML
+open htmlcov/index.html  # macOS
+xdg-open htmlcov/index.html  # Linux
 ```
 
-### Configuração para Testes
+### Tipos de Testes
+
+#### 1. Testes Unitários (`tests/unit/`)
+
+Validam componentes isoladamente:
+- **test_chat_validation.py**: Validação de inputs e outputs do chat
+- **test_ingest_validation.py**: Validação do processo de ingestão
+- **test_search_validation.py**: Validação da busca semântica
+- **test_llm_evaluator_unit.py**: Testes do framework de avaliação
+
+#### 2. Testes de Integração (`tests/integration/`)
+
+Validam fluxos completos end-to-end:
+- **test_e2e_core.py**: Testes de fluxo completo (ingestão → busca → chat)
+- **test_business_rules.py**: Validação de regras de negócio
+- **test_real_scenarios.py**: Cenários reais de uso
+- **test_llm_quality_evaluation.py**: Avaliação qualitativa com LLM-as-a-Judge
+
+#### 3. Testes de Qualidade LLM (`tests/integration/test_llm_quality_evaluation.py`)
+
+Validam **aspectos qualitativos** das respostas:
+
+```python
+def test_response_factual_accuracy(quality_test_collection, llm_evaluator):
+    """Valida precisão factual com LLM-as-a-Judge."""
+    searcher = SemanticSearch(collection_name=quality_test_collection)
+    question = "Quais são os principais tópicos?"
+    context = searcher.get_context(question)
+    response = ask_llm(question, context)
+    
+    evaluation = llm_evaluator.evaluate(
+        question=question,
+        context=context,
+        response=response,
+        system_prompt=SYSTEM_PROMPT
+    )
+    
+    assert evaluation.passed
+    assert evaluation.criteria_scores["adherence_to_context"] >= 70
+    assert evaluation.criteria_scores["hallucination_detection"] >= 80
+```
+
+### Cobertura de Código
+
+Objetivo: **>= 80% de cobertura**
 
 ```bash
-# Variáveis necessárias em .env
-OPENAI_API_KEY=sk-your-key
-LLM_MODEL=gpt-5-nano  # Modelo otimizado para testes
-DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/rag
+# Gerar relatório de cobertura
+pytest --cov=src --cov-report=html --cov-report=term-missing
+
+# Visualizar no terminal
+pytest --cov=src --cov-report=term
+
+# Abrir relatório HTML detalhado
+open htmlcov/index.html
 ```
 
-### Validação de Regras de Negócio
+#### Métricas de Cobertura
 
-Os testes de integração validam **todas as regras de negócio** com LLM real:
+O relatório HTML mostra:
+- ✅ Cobertura por arquivo
+- ✅ Linhas cobertas vs não cobertas
+- ✅ Branches cobertos
+- ✅ Linhas específicas não testadas (destaque vermelho)
 
-- ✅ **RN-001**: Respostas baseadas EXCLUSIVAMENTE no contexto
-- ✅ **RN-002**: Mensagem padrão quando sem informação
-- ✅ **RN-003**: Sistema nunca usa conhecimento externo
-- ✅ **RN-005**: Chunks de 1000 chars com overlap 150
-- ✅ **RN-006**: Busca retorna exatamente k=10 resultados
+### Validação Completa
 
-### Métricas
-
-| Métrica | Valor | Observação |
-|---------|-------|------------|
-| **Total de Testes** | 28 | Redução de 42% (48 → 28) |
-| **Testes Unitários** | 10 | Apenas validações críticas |
-| **Testes Integração** | 18 | 70% da suite (real validation) |
-| **Tempo Execução** | ~45-55s | Redução de 35% (77s → 50s) |
-| **Cobertura** | >= 95% | Mantida acima de 85% |
-| **Custo/Execução** | ~$0.03 | gpt-5-nano otimizado |
-
-Para mais detalhes, consulte [tests/README.md](tests/README.md).
+```bash
+# Script de validação automática (quando disponível)
+chmod +x scripts/validate.sh
+./scripts/validate.sh
+```
 
 ## 🔧 Troubleshooting
 
@@ -313,6 +406,10 @@ Para mais detalhes, consulte [tests/README.md](tests/README.md).
 
 **Solução**:
 ```bash
+# Ativar ambiente virtual primeiro
+source .venv/bin/activate
+
+# Reinstalar dependências
 pip install -r requirements.txt
 ```
 
@@ -327,20 +424,28 @@ pip install -r requirements.txt
    ```bash
    docker-compose up -d
    ```
+3. Verifique logs:
+   ```bash
+   docker logs rag-postgres
+   ```
 
 ### Problema: `AuthenticationError: Invalid API key`
 
 **Solução**:
-1. Verifique se `.env` existe
-2. Verifique se `OPENAI_API_KEY` está configurada
-3. Valide a key em: https://platform.openai.com/api-keys
+1. Verifique se `.env` existe e contém `OPENAI_API_KEY`
+2. Valide a key em: https://platform.openai.com/api-keys
+3. Certifique-se de que a key tem créditos disponíveis
 
 ### Problema: LLM não segue regras (inventa respostas)
 
 **Solução**:
 1. Verificar `SYSTEM_PROMPT` em `src/chat.py`
 2. Ajustar temperatura para 0 (determinístico)
-3. Testar com modelo mais recente (gpt-5-nano)
+3. Testar com modelo mais recente (gpt-4o-mini ou gpt-4)
+4. Validar com testes LLM-as-a-Judge:
+   ```bash
+   pytest tests/integration/test_llm_quality_evaluation.py -v
+   ```
 
 ### Problema: Busca retorna contexto vazio
 
@@ -354,48 +459,72 @@ pip install -r requirements.txt
    python src/ingest.py seu_documento.pdf
    ```
 
+### Problema: Testes LLM-as-a-Judge falhando
+
+**Possíveis causas**:
+1. **API Key inválida ou sem créditos**
+   ```bash
+   # Verificar se API key está configurada
+   echo $OPENAI_API_KEY
+   ```
+2. **Threshold muito alto**
+   - Ajustar threshold no `LLMEvaluator` (padrão: 70)
+3. **Modelo inadequado**
+   - Usar gpt-4 ou gpt-4o-mini para avaliações mais precisas
+
 ## 📁 Estrutura do Projeto
 
 ```
 mba-ia-desafio-ingestao-busca/
-├── .contexto/
-│   └── contexto-desenvolvimento.md    # Contexto completo do projeto
-├── .tarefas/
-│   ├── tarefas.md                     # Overview das tarefas
-│   └── 001-010-*.md                   # Tarefas detalhadas
+├── .github/
+│   └── prompts/
+│       └── dev-python-rag.prompt.md   # Instruções para desenvolvimento
 ├── src/
 │   ├── __init__.py
 │   ├── ingest.py                      # Ingestão de PDFs
 │   ├── search.py                      # Busca semântica
 │   └── chat.py                        # Interface CLI
 ├── tests/
-│   ├── conftest.py                    # Fixtures
-│   ├── test_ingest.py                 # Testes unitários
-│   ├── test_search.py                 # Testes unitários
-│   ├── test_chat.py                   # Testes unitários
-│   └── integration/                   # Testes de integração
-│       └── test_scenarios.py
+│   ├── __init__.py
+│   ├── conftest.py                    # Fixtures compartilhadas
+│   ├── unit/                          # Testes unitários
+│   │   ├── test_chat_validation.py
+│   │   ├── test_ingest_validation.py
+│   │   ├── test_search_validation.py
+│   │   └── test_llm_evaluator_unit.py # Framework LLM-as-a-Judge
+│   ├── integration/                   # Testes de integração
+│   │   ├── test_e2e_core.py
+│   │   ├── test_business_rules.py
+│   │   ├── test_real_scenarios.py
+│   │   └── test_llm_quality_evaluation.py  # Avaliação LLM
+│   ├── utils/                         # Utilitários de teste
+│   │   ├── llm_evaluator.py          # LLM-as-a-Judge framework
+│   │   └── evaluation_criteria.py    # Critérios de avaliação
+│   └── fixtures/                      # Fixtures de teste
 ├── scripts/
-│   ├── run_full_validation.sh         # Validação completa
-│   └── analyze_coverage.py            # Análise de cobertura
+│   └── validate.sh                    # Validação completa
+├── htmlcov/                           # Relatório de cobertura
 ├── docker-compose.yaml                # PostgreSQL + pgVector
+├── init.sql                           # Inicialização do banco
 ├── requirements.txt                   # Dependências Python
-├── .env                               # Variáveis de ambiente
-├── .env.example                       # Template de variáveis
 ├── pytest.ini                         # Configuração pytest
+├── .env                               # Variáveis de ambiente
+├── LICENSE                            # Licença MIT
 └── README.md                          # Este arquivo
 ```
 
 ## 📜 Regras de Negócio
 
-| ID | Regra | Descrição |
-|----|-------|-----------|
-| RN-001 | Contexto Exclusivo | Respostas baseadas SOMENTE no contexto recuperado |
-| RN-002 | Mensagem Padrão | "Não tenho informações necessárias..." quando sem contexto |
-| RN-003 | Chunk Size | 1000 caracteres, overlap 150 |
-| RN-004 | Similaridade | Cosine distance |
-| RN-005 | Embeddings | OpenAI text-embedding-3-small |
-| RN-006 | Top K | Fixo em 10 resultados |
+| ID | Regra | Descrição | Teste |
+|----|-------|-----------|-------|
+| RN-001 | Contexto Exclusivo | Respostas baseadas SOMENTE no contexto recuperado | `test_business_rules.py` |
+| RN-002 | Mensagem Padrão | "Não tenho informações necessárias..." quando sem contexto | `test_llm_quality_evaluation.py` |
+| RN-003 | Chunk Size | 1000 caracteres, overlap 150 | `test_ingest_validation.py` |
+| RN-004 | Similaridade | Cosine distance | `test_search_validation.py` |
+| RN-005 | Embeddings | OpenAI text-embedding-3-small | `test_e2e_core.py` |
+| RN-006 | Top K | Fixo em 10 resultados | `test_search_validation.py` |
+| RN-007 | Avaliação LLM | Score >= 70 para respostas aceitáveis | `test_llm_quality_evaluation.py` |
+| RN-008 | Sem Alucinação | Detecção de alucinação >= 80 | `test_llm_quality_evaluation.py` |
 
 ## 🤝 Contribuindo
 
@@ -407,10 +536,24 @@ mba-ia-desafio-ingestao-busca/
 
 ### Diretrizes
 
-- Adicione testes para novas funcionalidades
-- Mantenha cobertura >= 80%
-- Siga PEP 8 para estilo de código
-- Documente funções e módulos
+- ✅ Adicione testes para novas funcionalidades
+- ✅ Mantenha cobertura >= 80%
+- ✅ Siga PEP 8 para estilo de código
+- ✅ Documente funções e módulos (Google style)
+- ✅ Use type hints em funções públicas
+- ✅ Valide qualidade com LLM-as-a-Judge quando aplicável
+- ✅ Execute `pytest` antes de commitar
+
+### Executar Todos os Checks
+
+```bash
+# Testes completos
+pytest --cov=src --cov-report=html
+
+# Verificar cobertura >= 80%
+coverage report --fail-under=80
+
+```
 
 ## 📝 Licença
 
@@ -419,18 +562,38 @@ Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalh
 ## 🔗 Referências
 
 ### Documentação
-- [LangChain](https://python.langchain.com/)
-- [OpenAI API](https://platform.openai.com/docs)
-- [pgVector](https://github.com/pgvector/pgvector)
-- [Typer](https://typer.tiangolo.com/)
+
+- [LangChain](https://python.langchain.com/) - Framework RAG
+- [OpenAI API](https://platform.openai.com/docs) - Embeddings e LLM
+- [pgVector](https://github.com/pgvector/pgvector) - Busca vetorial no PostgreSQL
+- [Typer](https://typer.tiangolo.com/) - CLI framework
+- [Pytest](https://docs.pytest.org/) - Framework de testes
+- [LLM-as-a-Judge Pattern](https://arxiv.org/abs/2306.05685) - Padrão de avaliação
 
 ### Tutoriais
-- [RAG Tutorial](https://python.langchain.com/docs/tutorials/rag/)
-- [PostgreSQL + pgVector](https://github.com/langchain-ai/langchain-postgres)
-- [Pytest Guide](https://docs.pytest.org/)
+
+- [RAG Tutorial](https://python.langchain.com/docs/tutorials/rag/) - LangChain RAG
+- [PostgreSQL + pgVector](https://github.com/langchain-ai/langchain-postgres) - Integração
+- [Testing LLM Applications](https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation) - Métricas de avaliação
+- [LLM-as-a-Judge Best Practices](https://eugeneyan.com/writing/llm-patterns/#llm-as-a-judge) - Boas práticas
+
+### Artigos e Papers
+
+- [Judging LLM-as-a-Judge with MT-Bench](https://arxiv.org/abs/2306.05685)
+- [RAG Best Practices](https://www.pinecone.io/learn/retrieval-augmented-generation/)
+- [Vector Database Comparison](https://benchmark.vectorview.ai/)
 
 ---
 
 **Desenvolvido como parte do MBA em Inteligência Artificial**
 
 Para dúvidas ou suporte, abra uma issue no repositório.
+
+### 🎯 Highlights do Projeto
+
+- ✨ **Framework LLM-as-a-Judge** proprietário para avaliação automática de qualidade
+- ✨ **Cobertura >= 80%** com testes unitários e de integração
+- ✨ **4 dimensões de avaliação**: Contexto, Alucinação, Regras, Clareza
+- ✨ **Validação automática** de respostas usando segundo LLM
+- ✨ **Testes qualitativos** que vão além de validações estruturais
+- ✨ **Pipeline CI/CD ready** com pytest e coverage reports
