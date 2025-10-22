@@ -75,7 +75,7 @@
    - Mitigação: Validar todas as dependências na Tarefa 003
    
 2. **Modelo OpenAI gpt-5-nano**: Modelo pode não estar disponível publicamente
-   - Mitigação: Validar acesso ao modelo na Tarefa 003, preparar fallback para gpt-4o-mini
+   - Mitigação: Validar acesso ao modelo na Tarefa 003, preparar fallback para gpt-5-nano
 
 3. **Latência de embeddings**: Processamento de PDFs grandes pode ser lento
    - Mitigação: Implementar logging de progresso na Tarefa 004

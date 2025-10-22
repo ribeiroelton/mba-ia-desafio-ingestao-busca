@@ -128,7 +128,7 @@ Este sistema implementa um pipeline completo de RAG:
 - **search.py**: Busca semântica com k=10 fixo
 - **chat.py**: Interface CLI para perguntas e respostas
 - **PostgreSQL + pgVector**: Armazenamento de embeddings
-- **OpenAI**: Embeddings (text-embedding-3-small) e LLM (gpt-4o-mini)
+- **OpenAI**: Embeddings (text-embedding-3-small) e LLM (gpt-5-nano)
 
 ## 🚀 Funcionalidades
 
@@ -199,7 +199,7 @@ OPENAI_API_KEY=sk-your-key-here
 
 # Modelos (opcional)
 EMBEDDING_MODEL=text-embedding-3-small
-LLM_MODEL=gpt-4o-mini
+LLM_MODEL=gpt-5-nano
 ```
 
 ### 5. Valide Instalação
@@ -410,7 +410,7 @@ pip install -r requirements.txt
 **Solução**:
 1. Verificar `SYSTEM_PROMPT` em `src/chat.py`
 2. Ajustar temperatura para 0 (determinístico)
-3. Testar com modelo mais recente (gpt-4o-mini ou gpt-5-nano)
+3. Testar com modelo mais recente (gpt-5-nano ou gpt-5-nano)
 
 ### Problema: Busca retorna contexto vazio
 
