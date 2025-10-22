@@ -1,9 +1,9 @@
 # Tarefas do Projeto - Sistema de Ingestão e Busca Semântica
 
 ## Resumo Executivo
-- **Total de tarefas**: 11
-- **Grupos**: 3 fases
-- **Estimativa total**: 2.5 sprints (12 dias úteis)
+- **Total de tarefas**: 14
+- **Grupos**: 4 fases
+- **Estimativa total**: 3 sprints (14-15 dias úteis)
 - **Duração média por tarefa**: 1 dia
 
 ## Agrupamento e Ordenação
@@ -53,6 +53,19 @@
 
 ---
 
+### Fase 4: Manutenção e Melhorias (2-3 dias)
+**Objetivo**: Refatorar e otimizar código existente, melhorar qualidade e manutenibilidade  
+**Entregas**: Framework LLM-as-a-Judge otimizado, código limpo, testes fortalecidos
+
+#### Sprint 4 - Grupo 6: Refatoração (Dias 13-15)
+- **Tarefa 012**: Implementar testes de avaliação LLM (framework LLM-as-a-Judge)
+- **Tarefa 013**: Otimizar uso de tokens no LLM Judge
+- **Tarefa 014**: Refatorar e otimizar framework LLM-as-a-Judge (remover código não utilizado)
+
+**Critério de aceite da fase**: Framework otimizado, código reduzido em 10-15%, todos os testes passando, cobertura >= 80%
+
+---
+
 ## Dependências Críticas
 
 ### Dependências Sequenciais Obrigatórias
@@ -64,10 +77,13 @@
 6. **Tarefa 006** → Tarefa 007 (CLI antes de integração)
 7. **Tarefa 007** → Tarefa 008 (integração antes de testes)
 8. **Tarefa 008** → Tarefa 009 (testes antes de validação)
+9. **Tarefa 011** → Tarefa 012, 013, 014 (otimização de testes antes de melhorias do framework)
+10. **Tarefa 012** → Tarefa 014 (framework implementado antes de refatoração)
 
 ### Dependências Paralelas Possíveis
 - **Tarefa 004 e 005**: Podem ser desenvolvidas em paralelo após Tarefa 003
 - **Tarefa 009 e 010**: Podem ter trabalho paralelo (testes + documentação)
+- **Tarefa 013 e 014**: Podem ser trabalhadas em paralelo se houver necessidade
 
 ---
 
@@ -116,6 +132,9 @@ Tarefa 008: tests/ (novos arquivos)
 Tarefa 009: Validações e ajustes
 Tarefa 010: README.md
 Tarefa 011: tests/ (otimização, reorganização)
+Tarefa 012: tests/utils/llm_evaluator.py, tests/integration/test_llm_quality_evaluation.py
+Tarefa 013: tests/utils/llm_evaluator.py (otimizações de tokens)
+Tarefa 014: tests/utils/ (refatoração completa), tests/unit/, tests/integration/
 ```
 
 ---
@@ -139,17 +158,29 @@ Tarefa 011: tests/ (otimização, reorganização)
 - [ ] Tarefa 010 - Documentação
 - [ ] Tarefa 011 - Otimização de Testes
 
+### Fase 4: Manutenção e Melhorias ⬜
+- [ ] Tarefa 012 - Framework LLM-as-a-Judge
+- [ ] Tarefa 013 - Otimização de Tokens
+- [ ] Tarefa 014 - Refatoração do Framework
+
 ---
 
 ## Notas de Execução
 
 ### Ordem Recomendada
-Executar estritamente na ordem 001 → 011, respeitando dependências críticas.
+Executar estritamente na ordem 001 → 014, respeitando dependências críticas.
 
-**Tarefa 011 (Otimização)** deve ser executada após 009 e 010 estarem concluídas, pois:
+**Tarefa 011 (Otimização de Testes)** deve ser executada após 009 e 010 estarem concluídas, pois:
 - Requer suite de testes completa existente
 - Depende de documentação atualizada
 - Pode impactar métricas já estabelecidas
+
+**Tarefas 012-014 (Framework LLM-as-a-Judge)** são tarefas de melhoria contínua:
+- Tarefa 012: Já implementada (framework existe)
+- Tarefa 013: Otimização de custos/tokens
+- Tarefa 014: Refatoração para remover código não utilizado e fortalecer testes
+
+**Importante**: Tarefa 014 é focada em qualidade de código e pode ser executada a qualquer momento após o framework estar implementado e os testes de integração existentes.
 
 ### Paralelização (Opcional)
 Se houver mais de um desenvolvedor:
