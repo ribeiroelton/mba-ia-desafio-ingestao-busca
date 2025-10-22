@@ -153,6 +153,8 @@ Ingira um ou mais documentos PDF:
 # Ingerir um PDF
 python src/ingest.py relatorio_financeiro.pdf
 
+# Com coleção customizada
+python src/ingest.py documento.pdf --collection minha_colecao
 ```
 
 **Saída esperada**:
@@ -173,6 +175,9 @@ Inicie o chat para fazer perguntas:
 ```bash
 # Chat padrão
 python src/chat.py
+
+# Com coleção específica
+python src/chat.py --collection minha_colecao
 ```
 
 **Exemplo de interação**:
