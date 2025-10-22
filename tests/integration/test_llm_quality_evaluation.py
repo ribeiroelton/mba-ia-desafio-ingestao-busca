@@ -2,7 +2,6 @@
 Testes de qualidade de outputs LLM usando LLM-as-a-Judge.
 
 Valida aspectos qualitativos das respostas que vão além de validações estruturais.
-OTIMIZADO: Perguntas específicas sobre dados reais da tabela de empresas.
 """
 import pytest
 
@@ -23,16 +22,9 @@ def quality_test_collection(sample_pdf_path, shared_test_collection):
 def test_factual_accuracy_direct_question(quality_test_collection, llm_evaluator):
     """
     Valida resposta factual para pergunta direta sobre empresa específica.
-    
-    Cenário: Pergunta sobre fato específico presente no documento (tabela de empresas).
-    Expected: Resposta curta e correta baseada na tabela.
-    Tokens: ~400-500 (contexto mínimo + resposta direta)
-    
-    OTIMIZADO: Pergunta específica sobre dados tabulares reais do documento.
     """
     searcher = SemanticSearch(collection_name=quality_test_collection)
     
-    # OTIMIZADO: Pergunta sobre empresa real do documento
     question = "Qual é o faturamento da empresa Alfa Energia S.A.?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
@@ -54,10 +46,6 @@ def test_factual_accuracy_direct_question(quality_test_collection, llm_evaluator
 def test_no_context_standard_message(quality_test_collection, llm_evaluator):
     """
     Valida mensagem padrão quando sem contexto.
-    
-    Cenário: Pergunta fora do domínio.
-    Expected: Mensagem padrão exata.
-    Tokens: ~400 (contexto vazio + mensagem padrão)
     """
     searcher = SemanticSearch(collection_name=quality_test_collection)
     
@@ -81,17 +69,10 @@ def test_no_context_standard_message(quality_test_collection, llm_evaluator):
 def test_partial_info_no_hallucination(quality_test_collection, llm_evaluator):
     """
     Valida que LLM não inventa informações ausentes no documento.
-    
-    Cenário: Pergunta sobre campo não presente na tabela (funcionários).
-    Expected: Mensagem padrão, SEM inventar números.
-    Tokens: ~400-500 (contexto mínimo + mensagem padrão)
-    
-    OTIMIZADO: Pergunta sobre informação realmente ausente (documento só tem 
-    nome, faturamento e ano de fundação - NÃO tem número de funcionários).
     """
     searcher = SemanticSearch(collection_name=quality_test_collection)
     
-    # OTIMIZADO: Pergunta sobre campo ausente na tabela
+    # Pergunta sobre campo não presente na tabela
     question = "Quantos funcionários a empresa Alfa Energia S.A. possui?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
@@ -111,10 +92,6 @@ def test_partial_info_no_hallucination(quality_test_collection, llm_evaluator):
 def test_no_external_knowledge(quality_test_collection, llm_evaluator):
     """
     Valida que LLM não usa conhecimento geral externo.
-    
-    Cenário: Pergunta sobre tema comum, resposta deve ser do contexto.
-    Expected: Baseado no contexto OU mensagem padrão.
-    Tokens: ~500 (contexto + resposta)
     """
     searcher = SemanticSearch(collection_name=quality_test_collection)
     
@@ -136,13 +113,11 @@ def test_no_external_knowledge(quality_test_collection, llm_evaluator):
 
 def test_evaluation_cost_estimate(quality_test_collection, llm_evaluator):
     """
-    Documenta custos otimizados de avaliação.
-    
-    Nota: Teste informativo, sempre passa.
+    Documenta custos de avaliação.
     """
     # Executar avaliação simples
     searcher = SemanticSearch(collection_name=quality_test_collection)
-    question = "Teste de custo otimizado"
+    question = "Teste de custo"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
     
@@ -154,15 +129,11 @@ def test_evaluation_cost_estimate(quality_test_collection, llm_evaluator):
     )
     
     print("\n" + "="*60)
-    print("CUSTOS OTIMIZADOS - LLM-as-a-JUDGE")
+    print("CUSTOS DE AVALIAÇÃO")
     print("="*60)
     print(f"Modelo: gpt-5-nano")
-    print(f"Tokens por avaliação: ~600-900 (redução de 60%)")
+    print(f"Tokens por avaliação: ~600-900")
     print(f"Custo por avaliação: ~$0.00006-0.00009")
-    print(f"Custo por suite (5 testes): ~$0.0003-0.00045")
-    print(f"Custo por 50 execuções: ~$0.015-0.025")
-    print("="*60)
-    print(f"ECONOMIA vs versão anterior: ~60% de tokens")
     print("="*60)
     
     assert True

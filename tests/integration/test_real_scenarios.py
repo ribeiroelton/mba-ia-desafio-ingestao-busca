@@ -37,16 +37,12 @@ def real_scenario_collection(sample_pdf_path, shared_test_collection):
         pass
 
 
-def test_scenario_ambiguous_question_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_ambiguous_question(real_scenario_collection, llm_evaluator):
     """
-    Cenário: Pergunta ambígua mas específica.
-    
-    OTIMIZADO: Pergunta menos genérica.
-    Tokens: ~550 (redução de 30%)
+    Cenário: Pergunta ambígua.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # OTIMIZADO: Ambígua mas não genérica
     question = "Quando isso aconteceu?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
@@ -62,16 +58,12 @@ def test_scenario_ambiguous_question_optimized(real_scenario_collection, llm_eva
     assert evaluation.criteria_scores["hallucination_detection"] >= 80
 
 
-def test_scenario_no_context_messages_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_no_context_messages(real_scenario_collection, llm_evaluator):
     """
-    Cenário: Múltiplas perguntas fora do contexto.
-    
-    OTIMIZADO: 1 pergunta ao invés de loop com 3.
-    Tokens: ~400 (redução de 67%)
+    Cenário: Pergunta fora do contexto.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # OTIMIZADO: Uma pergunta representativa
     question = "Quem foi o primeiro presidente dos Estados Unidos?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
@@ -86,16 +78,12 @@ def test_scenario_no_context_messages_optimized(real_scenario_collection, llm_ev
     assert evaluation.overall_score >= 85
 
 
-def test_scenario_numeric_data_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_numeric_data(real_scenario_collection, llm_evaluator):
     """
-    Cenário: Extração de valor monetário específico de empresa real.
-    
-    OTIMIZADO: Pergunta sobre faturamento específico.
-    Tokens: ~450-500 (redução de 50%)
+    Cenário: Extração de valor monetário de empresa específica.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # OTIMIZADO: Pergunta sobre valor monetário real da tabela
     question = "Qual é o faturamento da empresa Aliança Esportes ME?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
@@ -112,17 +100,12 @@ def test_scenario_numeric_data_optimized(real_scenario_collection, llm_evaluator
     assert evaluation.criteria_scores["adherence_to_context"] >= 75
 
 
-def test_scenario_factual_extraction_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_factual_extraction(real_scenario_collection, llm_evaluator):
     """
     Cenário: Extração de fato específico de uma empresa.
-    
-    Tokens: ~450-500
-    
-    OTIMIZADO: Pergunta direta sobre ano de fundação.
     """
     searcher = SemanticSearch(collection_name=real_scenario_collection)
     
-    # OTIMIZADO: Pergunta direta sobre empresa específica
     question = "Em que ano foi fundada a empresa Alta Mídia S.A.?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)

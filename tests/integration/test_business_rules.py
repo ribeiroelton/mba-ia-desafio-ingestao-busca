@@ -39,17 +39,12 @@ def ingested_test_doc(sample_pdf_path, shared_test_collection):
         pass
 
 
-def test_rn001_answer_with_context_optimized(ingested_test_doc, llm_evaluator):
+def test_rn001_answer_with_context(ingested_test_doc, llm_evaluator):
     """
-    RN-001: Resposta baseada no contexto com pergunta direta sobre dados reais.
-    
-    Tokens: ~450-550 (redução de ~50%)
-    
-    OTIMIZADO: Pergunta específica sobre ano de fundação de empresa real.
+    RN-001: Resposta baseada no contexto.
     """
     searcher = SemanticSearch(collection_name=ingested_test_doc)
     
-    # OTIMIZADO: Pergunta sobre dado real e específico da tabela
     question = "Em que ano foi fundada a empresa Alfa Energia S.A.?"
     context = searcher.get_context(question)
     response = ask_llm(question=question, context=context)
@@ -67,11 +62,9 @@ def test_rn001_answer_with_context_optimized(ingested_test_doc, llm_evaluator):
     assert evaluation.criteria_scores["hallucination_detection"] >= 80
 
 
-def test_rn002_no_context_standard_message_optimized(ingested_test_doc, llm_evaluator):
+def test_rn002_no_context_standard_message(ingested_test_doc, llm_evaluator):
     """
     RN-002: Mensagem padrão quando sem contexto.
-    
-    Tokens: ~400 (já otimizado, manter)
     """
     searcher = SemanticSearch(collection_name=ingested_test_doc)
     
@@ -90,11 +83,9 @@ def test_rn002_no_context_standard_message_optimized(ingested_test_doc, llm_eval
     assert evaluation.overall_score >= 85
 
 
-def test_rn003_no_external_knowledge_optimized(ingested_test_doc, llm_evaluator):
+def test_rn003_no_external_knowledge(ingested_test_doc, llm_evaluator):
     """
     RN-003: Não usar conhecimento externo.
-    
-    Tokens: ~500 (já otimizado, manter)
     """
     searcher = SemanticSearch(collection_name=ingested_test_doc)
     

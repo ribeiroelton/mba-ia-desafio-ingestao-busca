@@ -301,39 +301,20 @@ Cada avaliação retorna um `EvaluationResult` com:
 - **passed**: Boolean indicando se passou no threshold
 - **details**: Detalhes adicionais por critério
 
-#### Métricas de Custo (Otimizadas)
+#### Métricas de Custo
 
-Framework otimizado para mínimo consumo de tokens:
+Framework para avaliação automática de qualidade:
 
-**Estratégia de Otimização**:
-- ✅ Perguntas diretas e factuais (não genéricas)
-- ✅ Respostas curtas (1-3 sentenças)
-- ✅ Contexto mínimo necessário
-- ✅ Sem testes de sumarização
-
-**Custos Atuais**:
 - Modelo: gpt-5-nano
-- Tokens por avaliação: ~600-900 (redução de 60%)
+- Tokens por avaliação: ~600-900
 - Custo por avaliação: ~$0.00006-0.00009
-- Custo por suite (5 testes): ~$0.0003-0.00045
-- Custo por 50 execuções: ~$0.015-0.025
 
-**Economia**: ~70% em tokens comparado à versão anterior
-
-**Detalhamento por Arquivo**:
-- `test_llm_quality_evaluation.py`: 5 testes, ~$0.0004
-- `test_business_rules.py`: 3 testes, ~$0.0002
-- `test_real_scenarios.py`: 4 testes, ~$0.0003
-- `test_e2e_core.py`: 3 testes, ~$0.0002
-- **Total geral**: 15 testes, ~$0.0011
-
-**Comparação Geral**:
-| Métrica | Antes | Depois | Redução |
-|---------|-------|--------|---------|
-| Testes totais | 23 | 15 | -35% |
-| Tokens totais | ~34,600 | ~9,850 | -72% |
-| Custo total | ~$0.0036 | ~$0.0011 | -69% |
-| Tempo total | ~200s | ~80s | -60% |
+**Detalhamento por arquivo**:
+- `test_llm_quality_evaluation.py`: 5 testes
+- `test_business_rules.py`: 3 testes LLM
+- `test_real_scenarios.py`: 4 testes
+- `test_e2e_core.py`: 3 testes
+- **Total**: 15 testes LLM-as-a-Judge
 
 ### Executando Testes
 
@@ -381,14 +362,11 @@ Validam fluxos completos end-to-end:
 
 #### 3. Testes de Qualidade LLM (`tests/integration/test_llm_quality_evaluation.py`)
 
-Validam **aspectos qualitativos** das respostas com perguntas específicas sobre dados reais:
+Validam **aspectos qualitativos** das respostas:
 
 ```python
 def test_factual_accuracy_direct_question(quality_test_collection, llm_evaluator):
-    """Valida precisão factual com LLM-as-a-Judge.
-    
-    OTIMIZADO: Pergunta específica sobre dados reais da tabela de empresas.
-    """
+    """Valida resposta factual para pergunta direta."""
     searcher = SemanticSearch(collection_name=quality_test_collection)
     question = "Qual é o faturamento da empresa Alfa Energia S.A.?"
     context = searcher.get_context(question)

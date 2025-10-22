@@ -261,9 +261,9 @@ def test_evaluation_cost_estimate(quality_test_collection, llm_evaluator):
 
 ### 2. test_business_rules.py (5 → 3)
 
-#### 1. test_rn001_answer_with_context_optimized
+#### 1. test_rn001_answer_with_context
 ```python
-def test_rn001_answer_with_context_optimized(ingested_test_doc, llm_evaluator):
+def test_rn001_answer_with_context(ingested_test_doc, llm_evaluator):
     """
     RN-001: Resposta baseada no contexto com pergunta direta sobre dados reais.
     
@@ -291,9 +291,9 @@ def test_rn001_answer_with_context_optimized(ingested_test_doc, llm_evaluator):
     assert evaluation.criteria_scores["hallucination_detection"] >= 80
 ```
 
-#### 2. test_rn002_no_context_standard_message_optimized
+#### 2. test_rn002_no_context_standard_message
 ```python
-def test_rn002_no_context_standard_message_optimized(ingested_test_doc, llm_evaluator):
+def test_rn002_no_context_standard_message(ingested_test_doc, llm_evaluator):
     """
     RN-002: Mensagem padrão quando sem contexto.
     
@@ -316,9 +316,9 @@ def test_rn002_no_context_standard_message_optimized(ingested_test_doc, llm_eval
     assert evaluation.overall_score >= 85
 ```
 
-#### 3. test_rn003_no_external_knowledge_optimized
+#### 3. test_rn003_no_external_knowledge
 ```python
-def test_rn003_no_external_knowledge_optimized(ingested_test_doc, llm_evaluator):
+def test_rn003_no_external_knowledge(ingested_test_doc, llm_evaluator):
     """
     RN-003: Não usar conhecimento externo.
     
@@ -343,9 +343,9 @@ def test_rn003_no_external_knowledge_optimized(ingested_test_doc, llm_evaluator)
 
 ### 3. test_real_scenarios.py (6 → 4)
 
-#### 1. test_scenario_no_context_messages_optimized
+#### 1. test_scenario_no_context_messages
 ```python
-def test_scenario_no_context_messages_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_no_context_messages(real_scenario_collection, llm_evaluator):
     """
     Cenário: Múltiplas perguntas fora do contexto.
     
@@ -369,9 +369,9 @@ def test_scenario_no_context_messages_optimized(real_scenario_collection, llm_ev
     assert evaluation.overall_score >= 85
 ```
 
-#### 2. test_scenario_ambiguous_question_optimized
+#### 2. test_scenario_ambiguous_question
 ```python
-def test_scenario_ambiguous_question_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_ambiguous_question(real_scenario_collection, llm_evaluator):
     """
     Cenário: Pergunta ambígua mas específica.
     
@@ -393,9 +393,9 @@ def test_scenario_ambiguous_question_optimized(real_scenario_collection, llm_eva
     assert evaluation.criteria_scores["hallucination_detection"] >= 80
 ```
 
-#### 3. test_scenario_numeric_data_optimized
+#### 3. test_scenario_numeric_data
 ```python
-def test_scenario_numeric_data_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_numeric_data(real_scenario_collection, llm_evaluator):
     """
     Cenário: Extração de valor monetário específico de empresa real.
     
@@ -418,9 +418,9 @@ def test_scenario_numeric_data_optimized(real_scenario_collection, llm_evaluator
     assert evaluation.criteria_scores["adherence_to_context"] >= 75
 ```
 
-#### 4. test_scenario_factual_extraction_optimized
+#### 4. test_scenario_factual_extraction
 ```python
-def test_scenario_factual_extraction_optimized(real_scenario_collection, llm_evaluator):
+def test_scenario_factual_extraction(real_scenario_collection, llm_evaluator):
     """
     Cenário: Comparação entre duas empresas específicas.
     
@@ -447,9 +447,9 @@ def test_scenario_factual_extraction_optimized(real_scenario_collection, llm_eva
 
 ### 4. test_e2e_core.py (5 → 3)
 
-#### 1. test_e2e_complete_flow_optimized
+#### 1. test_e2e_complete_flow
 ```python
-def test_e2e_complete_flow_optimized(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_complete_flow(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
     E2E completo com pergunta direta sobre empresa da tabela.
     
@@ -476,9 +476,9 @@ def test_e2e_complete_flow_optimized(sample_pdf_path, clean_test_collection, llm
     assert evaluation.criteria_scores["adherence_to_context"] >= 70
 ```
 
-#### 2. test_e2e_no_context_flow_optimized
+#### 2. test_e2e_no_context_flow
 ```python
-def test_e2e_no_context_flow_optimized(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_no_context_flow(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
     E2E com pergunta fora do contexto.
     
@@ -502,9 +502,9 @@ def test_e2e_no_context_flow_optimized(sample_pdf_path, clean_test_collection, l
     assert evaluation.criteria_scores["rule_following"] >= 90
 ```
 
-#### 3. test_e2e_special_characters_optimized
+#### 3. test_e2e_special_characters
 ```python
-def test_e2e_special_characters_optimized(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_special_characters(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
     E2E com formato monetário (caracteres especiais R$).
     

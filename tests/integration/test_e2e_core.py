@@ -10,13 +10,9 @@ from src.search import SemanticSearch
 from src.chat import ask_llm, SYSTEM_PROMPT
 
 
-def test_e2e_complete_flow_optimized(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_complete_flow(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    E2E completo com pergunta direta sobre empresa da tabela.
-    
-    Tokens: ~500-600 (redução de 50%)
-    
-    OTIMIZADO: Pergunta específica sobre primeira empresa da lista.
+    Teste E2E completo: Ingest → Search → Chat.
     """
     # Ingestão
     docs = load_pdf(sample_pdf_path)
@@ -37,11 +33,9 @@ def test_e2e_complete_flow_optimized(sample_pdf_path, clean_test_collection, llm
     assert evaluation.criteria_scores["adherence_to_context"] >= 70
 
 
-def test_e2e_no_context_flow_optimized(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_no_context_flow(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    E2E com pergunta fora do contexto.
-    
-    Tokens: ~400
+    Teste E2E com pergunta fora do contexto.
     """
     docs = load_pdf(sample_pdf_path)
     chunks = split_documents(docs)
@@ -61,20 +55,15 @@ def test_e2e_no_context_flow_optimized(sample_pdf_path, clean_test_collection, l
     assert evaluation.criteria_scores["rule_following"] >= 90
 
 
-def test_e2e_special_characters_optimized(sample_pdf_path, clean_test_collection, llm_evaluator):
+def test_e2e_special_characters(sample_pdf_path, clean_test_collection, llm_evaluator):
     """
-    E2E com formato monetário (caracteres especiais R$).
-    
-    Tokens: ~450-500
-    
-    OTIMIZADO: Pergunta sobre formato presente no documento (R$).
+    Teste E2E com caracteres especiais.
     """
     docs = load_pdf(sample_pdf_path)
     chunks = split_documents(docs)
     store_in_vectorstore(chunks, clean_test_collection)
     
     searcher = SemanticSearch(collection_name=clean_test_collection)
-    # OTIMIZADO: Pergunta sobre formato monetário real do documento
     question = "Os valores estão em qual moeda?"
     context = searcher.get_context(question)
     response = ask_llm(question, context)
