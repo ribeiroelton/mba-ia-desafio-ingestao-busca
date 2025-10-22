@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 from langchain_postgres import PGVector
 from langchain_openai import OpenAIEmbeddings
 
+from tests.utils.llm_evaluator import LLMEvaluator
+
 load_dotenv()
 
 
@@ -115,6 +117,17 @@ def sample_pdf_path():
     pytest.skip("PDF de teste não encontrado")
 
 
+@pytest.fixture(scope="session")
+def llm_evaluator():
+    """
+    Fixture para avaliador LLM.
+    
+    Escopo: session - reutilizado em todos os testes.
+    Usa gpt-5-nano para avaliações com threshold padrão de 70.
+    """
+    return LLMEvaluator(threshold=70, model="gpt-5-nano")
+
+
 @pytest.fixture
 def sample_text():
     """Texto de exemplo para testes."""
@@ -123,3 +136,4 @@ def sample_text():
     A empresa possui 50 funcionários e atende 200 clientes no Brasil.
     O crescimento anual foi de 25% comparado ao ano anterior.
     """
+

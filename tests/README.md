@@ -4,33 +4,82 @@
 
 ```
 tests/
-├── conftest.py                      # Fixtures globais
-├── unit/                            # Testes unitários críticos (10 testes)
-│   ├── test_ingest_validation.py    # Validações de ingestão
-│   ├── test_search_validation.py    # Validações de busca
-│   └── test_chat_validation.py      # Validações de chat
-└── integration/                     # Testes E2E (18 testes)
-    ├── test_business_rules.py       # RN-001, RN-002, RN-003, RN-005, RN-006
-    ├── test_e2e_core.py            # Fluxos principais E2E
-    └── test_real_scenarios.py       # Cenários reais com gpt-5-nano
+├── conftest.py                          # Fixtures globais
+├── utils/                               # Utilitários de teste
+│   ├── llm_evaluator.py                # Framework de avaliação LLM
+│   └── evaluation_criteria.py         # Critérios de avaliação
+├── unit/                                # Testes unitários críticos
+│   ├── test_ingest_validation.py       # Validações de ingestão
+│   ├── test_search_validation.py       # Validações de busca
+│   ├── test_chat_validation.py         # Validações de chat
+│   └── test_llm_evaluator_unit.py      # Testes do avaliador LLM
+└── integration/                         # Testes E2E
+    ├── test_business_rules.py          # RN-001, RN-002, RN-003, RN-005, RN-006
+    ├── test_e2e_core.py                # Fluxos principais E2E
+    ├── test_real_scenarios.py          # Cenários reais + avaliação LLM
+    └── test_llm_quality_evaluation.py  # Testes de qualidade LLM
 ```
 
 ## Filosofia
 
 ### Menos é Mais
-Suite otimizada com **~28 testes** (redução de 42% vs 48 testes originais), focando em:
+Suite otimizada focando em:
 - **Testes Unitários**: Apenas validações críticas (entrada, configurações)
 - **Testes de Integração**: Validação E2E com LLM real (70% da suite)
 
 ### Real > Mock
 - **0 mocks de LLM**: Todos os testes de chat usam gpt-5-nano REAL
+- **LLM-as-a-Judge**: Avaliação qualitativa automatizada de respostas
 - Validação autêntica do comportamento do sistema
 - Confiança real na qualidade das respostas
 
 ### Fast Feedback
 - **Unitários**: < 5s total, sem custo de API
 - **Integração**: ~40-50s, validação completa com LLM
-- **Total**: ~45-55s (redução de ~40% vs 77s originais)
+- **Avaliação LLM**: +2-3s por teste com avaliação qualitativa
+
+## LLM Evaluation Tests
+
+### Visão Geral
+Framework de avaliação automatizada de qualidade de outputs de LLM usando **LLM-as-a-Judge** pattern.
+
+### Como Funciona
+1. LLM principal (gpt-5-nano) gera resposta baseada em contexto
+2. LLM avaliador (gpt-5-nano) analisa qualidade da resposta
+3. Scores numéricos (0-100) gerados por critério
+4. Teste passa se score >= 70
+
+### Critérios de Avaliação
+- **Aderência ao Contexto** (30%): Resposta baseada exclusivamente no contexto
+- **Detecção de Alucinação** (30%): Ausência de informações inventadas
+- **Seguimento de Regras** (25%): Aderência ao SYSTEM_PROMPT
+- **Clareza e Objetividade** (15%): Qualidade da comunicação
+
+### Uso Básico
+```python
+from tests.utils.llm_evaluator import LLMEvaluator
+from src.chat import SYSTEM_PROMPT
+
+evaluator = LLMEvaluator(threshold=70)
+evaluation = evaluator.evaluate(
+    question="Pergunta do usuário",
+    context="Contexto recuperado",
+    response="Resposta do LLM",
+    system_prompt=SYSTEM_PROMPT
+)
+
+assert evaluation.passed, f"Score: {evaluation.score}\n{evaluation.feedback}"
+```
+
+### Custos
+- **Modelo**: gpt-5-nano (avaliação e geração)
+- **Custo por avaliação**: ~$0.0001-0.0002
+- **Custo para suite completa**: ~$0.01-0.02
+
+### Configuração
+- **Threshold padrão**: 70/100
+- **Pode ser ajustado** por teste específico
+- **Fixture global**: `llm_evaluator` em `conftest.py`
 
 ## Modelo LLM
 
