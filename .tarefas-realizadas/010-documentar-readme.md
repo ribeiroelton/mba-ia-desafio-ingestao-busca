@@ -237,4 +237,5 @@ README.md completo e profissional criado com sucesso. Documento serve como guia 
 **Implementado por**: GitHub Copilot  
 **Data**: 2025-10-21  
 **Branch**: feature/010-documentar-readme  
-**Commit**: A ser criado
+**Commit**: a888258  
+**Pull Request**: #10 - https://github.com/ribeiroelton/mba-ia-desafio-ingestao-busca/pull/10

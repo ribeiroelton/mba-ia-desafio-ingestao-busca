@@ -14,7 +14,6 @@ Sistema de Retrieval Augmented Generation (RAG) para ingestão de documentos PDF
 - [Funcionalidades](#-funcionalidades)
 - [Pré-requisitos](#-pré-requisitos)
 - [Instalação](#-instalação)
-- [Configuração](#️-configuração)
 - [Uso](#-uso)
   - [Ingestão de PDFs](#ingestão-de-pdfs)
   - [Chat Interativo](#chat-interativo)
@@ -144,64 +143,6 @@ EMBEDDING_MODEL=text-embedding-3-small
 LLM_MODEL=gpt-5-nano
 ```
 
-### 5. Valide Instalação
-
-```bash
-python -c "
-import sys
-import langchain
-import typer
-import psycopg
-from langchain_openai import OpenAIEmbeddings
-
-print(f'✅ Python: {sys.version}')
-print(f'✅ LangChain: {langchain.__version__}')
-print(f'✅ Typer instalado')
-print(f'✅ Psycopg instalado')
-print('✅ Instalação OK')
-"
-```
-
-## ⚙️ Configuração
-
-### Arquivo docker-compose.yaml
-
-```yaml
-services:
-  postgres:
-    image: pgvector/pgvector:pg17
-    container_name: rag-postgres
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: rag
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
-```
-
-### Arquivo requirements.txt
-
-```
-langchain==0.3.27
-langchain-openai==0.3.35
-langchain-postgres==0.0.16
-langchain-community==0.3.19
-langchain-text-splitters==0.3.11
-psycopg==3.2.11
-psycopg-binary==3.2.11
-psycopg-pool==3.2.6
-pypdf==5.1.0
-typer==0.20.0
-python-dotenv==1.0.0
-pytest==8.3.4
-pytest-cov==6.0.0
-```
-
 ## 🎮 Uso
 
 ### Ingestão de PDFs
@@ -210,7 +151,7 @@ Ingira um ou mais documentos PDF:
 
 ```bash
 # Ingerir um PDF
-python src/ingest.py documento.pdf
+python src/ingest.py relatorio_financeiro.pdf
 
 ```
 
@@ -232,9 +173,6 @@ Inicie o chat para fazer perguntas:
 ```bash
 # Chat padrão
 python src/chat.py
-
-# Com coleção específica
-python src/chat.py --collection minha_colecao
 ```
 
 **Exemplo de interação**:
